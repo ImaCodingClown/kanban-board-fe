@@ -1,11 +1,11 @@
-import { DraxProvider, DraxView, DraxViewDragStatus } from 'react-native-drax';
+import { DraxProvider, DraxView } from 'react-native-drax';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useBoard } from '../hooks/useBoard';
 
 const { width } = Dimensions.get('window');
 
-export const Board = () => {
+export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
   const [cards, setCards] = useState<any[]>([]);
   const [columns, setColumns] = useState<any[]>([]);

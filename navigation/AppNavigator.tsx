@@ -1,11 +1,11 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Board } from '../components/Board';
+import { BoardScreen } from '../screens/BoardScreen';
 
 const Stack = createNativeStackNavigator();
 
 export const AppNavigator = () => (
   <Stack.Navigator>
-    <Stack.Screen name="Board" component={Board} />
+    <Stack.Screen name="Board" component={BoardScreen} />
   </Stack.Navigator>
 );
 
