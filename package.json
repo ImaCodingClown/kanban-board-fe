@@ -74,6 +74,7 @@
   "private": true,
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
       "npm run lint",
       "npm test -- --bail --findRelatedTests"
     ]
