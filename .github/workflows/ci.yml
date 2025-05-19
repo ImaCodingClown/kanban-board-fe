@@ -26,6 +26,11 @@ jobs:
           toolchain: stable
           override: true
 
+      - name: Build rust Image
+        run: |
+          cd backend
+          docker build -t rust-backend-image .
+
       - name: Start backend witn mongo
         run: |
           docker compose up -d
