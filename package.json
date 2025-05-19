@@ -11,7 +11,8 @@
     "test": "jest --watchAll",
     "test:ci": "CI=true jest --ci --coverage",
     "lint": "expo lint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check-format": "prettier --check ."
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",

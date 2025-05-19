@@ -1,2 +1,4 @@
 npm run test:ci
+npm run check-format
 npm run lint
+
