@@ -34,6 +34,11 @@
         }
       ]
     ],
+    "extra": {
+      "expo-router": {
+        "appRoot": "./app"
+      }
+    },
     "experiments": {
       "typedRoutes": true
     }
