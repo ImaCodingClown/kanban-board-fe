@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Clone rust backend
-        run: git clone https://github.com/ImaCodingClown/kanban-board-be.git
+        run: git clone https://github.com/ImaCodingClown/kanban-board-be.git backend
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
