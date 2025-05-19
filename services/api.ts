@@ -1,6 +1,5 @@
-import axios from 'axios';
+import axios from "axios";
 
 export const api = axios.create({
-  baseURL: 'http://localhost:8080', // your Rust backend
+  baseURL: "http://localhost:8080", // your Rust backend
 });
-

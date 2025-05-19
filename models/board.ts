@@ -13,5 +13,5 @@ export interface CardModel {
 }
 
 export interface BoardResponse {
-    board: BoardModel
+  board: BoardModel;
 }

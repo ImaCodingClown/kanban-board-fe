@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface AuthState {
   token: string | null;
@@ -9,4 +9,3 @@ export const useAuth = create<AuthState>((set) => ({
   token: null,
   setToken: (token) => set({ token }),
 }));
-

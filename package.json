@@ -9,7 +9,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "test:ci": "CI=true jest --ci --coverage",
+    "lint": "expo lint",
+    "prepare": "husky"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
@@ -67,9 +69,9 @@
     "prettier": "^3.5.3",
     "react-native-gesture-handler": "^2.25.0",
     "react-test-renderer": "18.3.1",
-    "ts-jest": "^29.3.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "undici": "^5.29.0"
   },
   "private": true,
   "lint-staged": {
