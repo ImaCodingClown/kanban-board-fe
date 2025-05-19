@@ -28,7 +28,7 @@ jobs:
 
       - name: Start backend witn mongo
         run: |
-          docker-compose up -d
+          docker compose up -d
           sleep 10
 
       - name: Install dependencies
