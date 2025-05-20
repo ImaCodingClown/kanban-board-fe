@@ -9,7 +9,7 @@ services:
   rust-backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: ${LOCALBACKEND}/Dockerfile
     image: rust-backend-image
     ports:
       - "8080:8080"

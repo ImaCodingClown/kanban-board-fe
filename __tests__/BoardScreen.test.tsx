@@ -3,7 +3,7 @@ import { render, waitFor } from "@testing-library/react-native";
 import { BoardScreen } from "../screens/BoardScreen";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { server } from "../__mocks__/server";
+// import { server } from "../__mocks__/server";
 import { DraxProvider } from "react-native-drax";
 
 // Allow 'mock-drax-view' as a valid JSX element for testing
@@ -40,10 +40,10 @@ jest.mock("react-native-drax", () => ({
     </mock-drax-view>
   ),
 }));
-
-beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+//
+// beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
+// afterEach(() => server.resetHandlers());
+// afterAll(() => server.close());
 
 const queryClient = new QueryClient();
 test("renders board data from backend", async () => {
