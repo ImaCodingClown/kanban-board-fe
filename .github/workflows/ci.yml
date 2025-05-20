@@ -12,15 +12,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Clone rust backend
+        run: git clone https://github.com/ImaCodingClown/kanban-board-be.git backend
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Set up rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build rust Image
+        run: |
+          cd backend
+          docker build -t rust-backend-image .
 
       - name: Install dependencies
         run: npm ci
 
       - name: Run linter
         run: npm run lint
-#      - name: Run tests
-#        run: npm test
+
+      - name: Start backend witn mongo
+        run: |
+          docker compose up -d &&
+          sleep 10 &&
+          npm run test:ci
+
+      - name: TearDown
+        run: docker-compose down
