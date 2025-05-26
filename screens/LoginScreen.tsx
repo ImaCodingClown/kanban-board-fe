@@ -4,13 +4,13 @@ import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
 
 export const LoginScreen = ({ navigation }: any) => {
-  const [email, setEmail] = useState("");
+  const [userOrEmail, setUserOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const setToken = useAuth((state) => state.setToken);
 
   const handleLogin = async () => {
     try {
-      const response = await api.post("/login", { email, password });
+      const response = await api.post("/login", { userOrEmail, password });
       setToken(response.data.token);
       navigation.replace("Board");
     } catch (error) {
@@ -24,9 +24,9 @@ export const LoginScreen = ({ navigation }: any) => {
       <Text style={styles.title}>Login</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+        placeholder="Username or Email"
+        value={userOrEmail}
+        onChangeText={setUserOrEmail}
       />
       <TextInput
         style={styles.input}
