@@ -1,5 +1,29 @@
 import { Stack } from "expo-router";
+import { useEffect, useState } from "react";
+import { QueryClient, QueryClientProvider } from "react-query";
+
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
-  return <Stack />;
+  const [isMockingEnabled, setMockingEnabled] = useState(!__DEV__);
+  useEffect(() => {
+    async function enableMocking() {
+      if (!__DEV__) return;
+      await import("../msw.polyfills");
+      const { server } = await import("../__mocks__/server");
+      server.listen();
+      setMockingEnabled(true);
+    }
+    enableMocking();
+  }, []);
+
+  if (!isMockingEnabled) {
+    return null;
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Stack />
+    </QueryClientProvider>
+  );
 }
