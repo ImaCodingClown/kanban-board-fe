@@ -39,8 +39,15 @@ jest.mock("react-native-drax", () => {
   };
 });
 
-const queryClient = new QueryClient();
 test("renders board data from backend", async () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        suspense: false,
+      },
+    },
+  });
   const { getByText } = render(
     <QueryClientProvider client={queryClient}>
       <BoardScreen />
