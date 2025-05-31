@@ -21,29 +21,24 @@ declare global {
     }
   }
 }
-
-jest.mock("react-native-drax", () => ({
-  DraxProvider: ({ children }: { children?: React.ReactNode }) => (
-    <mock-drax-provider>{children}</mock-drax-provider>
-  ),
-  DraxView: ({
-    children,
-    draggable,
-    payload,
-  }: {
-    children?: React.ReactNode;
-    draggable?: boolean;
-    payload?: any;
-  }) => (
-    <mock-drax-view draggable={draggable} payload={payload}>
-      {children}
-    </mock-drax-view>
-  ),
-}));
 //
-// beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
-// afterEach(() => server.resetHandlers());
-// afterAll(() => server.close());
+jest.mock("react-native-drax", () => {
+  const React = require("react");
+  const { View, Text } = require("react-native");
+
+  return {
+    DraxProvider: ({ children, ...props }: { children?: React.ReactNode }) => (
+      <View {...props} testID="mock-drax-provider">
+        {children}
+      </View>
+    ),
+    DraxView: ({ children, ...props }: any) => (
+      <View {...props} testID="mock-drax-view">
+        {children}
+      </View>
+    ),
+  };
+});
 
 const queryClient = new QueryClient();
 test("renders board data from backend", async () => {
