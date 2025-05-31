@@ -1,5 +1,9 @@
 // __tests__/BoardScreen.test.tsx
-import { render, waitFor } from "@testing-library/react-native";
+import {
+  render,
+  waitFor,
+  waitForElementToBeRemoved,
+} from "@testing-library/react-native";
 import { BoardScreen } from "../screens/BoardScreen";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -57,6 +61,8 @@ test("renders board data from backend", async () => {
   );
 
   const getByText = renderResult.getByText;
+
+  await waitForElementToBeRemoved(() => getByText("Loading board..."));
 
   await waitFor(() => {
     expect(getByText("To Do")).toBeTruthy();
