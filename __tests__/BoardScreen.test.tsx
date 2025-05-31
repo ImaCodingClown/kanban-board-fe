@@ -4,7 +4,6 @@ import { BoardScreen } from "../screens/BoardScreen";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
 // import { server } from "../__mocks__/server";
-import { DraxProvider } from "react-native-drax";
 
 // Allow 'mock-drax-view' as a valid JSX element for testing
 declare global {
@@ -24,7 +23,7 @@ declare global {
 //
 jest.mock("react-native-drax", () => {
   const React = require("react");
-  const { View, Text } = require("react-native");
+  const { View } = require("react-native");
 
   return {
     DraxProvider: ({ children, ...props }: { children?: React.ReactNode }) => (
