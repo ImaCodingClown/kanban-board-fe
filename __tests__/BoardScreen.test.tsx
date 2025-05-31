@@ -3,6 +3,7 @@ import { render, waitFor } from "@testing-library/react-native";
 import { BoardScreen } from "../screens/BoardScreen";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
+import { act } from "react";
 // import { server } from "../__mocks__/server";
 
 // Allow 'mock-drax-view' as a valid JSX element for testing
@@ -48,11 +49,14 @@ test("renders board data from backend", async () => {
       },
     },
   });
-  const { getByText } = render(
+
+  const renderResult = render(
     <QueryClientProvider client={queryClient}>
       <BoardScreen />
     </QueryClientProvider>,
   );
+
+  const getByText = renderResult.getByText;
 
   await waitFor(() => {
     expect(getByText("To Do")).toBeTruthy();
