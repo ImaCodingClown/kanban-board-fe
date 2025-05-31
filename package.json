@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
-    "test:ci": "CI=true jest --ci --coverage --maxWorkers=2 --maxConcurrent=2",
+    "test:ci": "CI=true jest --ci --coverage --maxWorkers=1 --maxConcurrent=1",
     "test:local": "jest --ci --coverage",
     "lint": "expo lint",
     "prepare": "husky",

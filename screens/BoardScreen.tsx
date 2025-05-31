@@ -14,6 +14,8 @@ export const BoardScreen = () => {
   const board: ColumnModel[] | undefined = data;
 
   React.useEffect(() => {
+    const controller = new AbortController();
+
     if (board) {
       setColumns(board);
       const allCards = board.flatMap((col: ColumnModel) =>
@@ -24,6 +26,8 @@ export const BoardScreen = () => {
       );
       setCards(allCards);
     }
+
+    return () => controller.abort();
   }, [board]);
 
   if (isLoading) return <Text>Loading board...</Text>;
