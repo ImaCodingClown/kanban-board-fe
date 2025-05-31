@@ -2,20 +2,24 @@ import { DraxProvider, DraxView } from "react-native-drax";
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { useBoard } from "../hooks/useBoard";
+import { CardModel, ColumnModel } from "../models/board";
+import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
 export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
-  const [cards, setCards] = useState<any[]>([]);
-  const [columns, setColumns] = useState<any[]>([]);
+  const [cards, setCards] = useState<(CardModel & { columnId: string })[]>([]);
+  const [columns, setColumns] = useState<ColumnModel[]>([]);
+  const router = useRouter();
 
-  const board = data?.board;
+  const board: ColumnModel[] | undefined = data;
+
   React.useEffect(() => {
     if (board) {
       setColumns(board);
-      const allCards = board.flatMap((col: any) =>
-        col.cards.map((card: any) => ({
+      const allCards = board.flatMap((col: ColumnModel) =>
+        col.cards.map((card: CardModel) => ({
           ...card,
           columnId: col.id,
         })),
@@ -24,7 +28,7 @@ export const BoardScreen = () => {
     }
   }, [board]);
 
-  if (isLoading) return <Text>Loading...</Text>;
+  if (isLoading) return <Text>Loading board...</Text>;
 
   const onReceiveDragDrop = (event: any, destinationColumnId: string) => {
     const draggedCardId = event.dragged.payload;
@@ -63,6 +67,12 @@ export const BoardScreen = () => {
                   draggable
                 >
                   <Text>{card.title}</Text>
+                  {card.description && <Text>{card.description}</Text>}
+                  {card.assignee && <Text>Assignee: {card.assignee}</Text>}
+                  {card.story_points && (
+                    <Text>Story Points: {card.story_points}</Text>
+                  )}
+                  {card.priority && <Text>Priority: {card.priority}</Text>}
                 </DraxView>
               ))}
           </DraxView>
