@@ -11,9 +11,9 @@ module.exports = {
     "./node_modules/react-native-gesture-handler/jestSetup.js",
   ],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
-  testPathIgnorePatterns: ["/node_modules/", "/android/", "/ios/"],
+  testPathIgnorePatterns: ["node_modules/", "/android/", "/ios/"],
   transformIgnorePatterns: [
-    "node_modules/(?!(expo-router|expo|@expo|@react-native|react-native|react-native-vector-icons|@react-navigation|msw)/)",
+    "node_modules/(?!(expo-router|expo|@expo|@react-native|react-native|react-native-vector-icons|@react-navigation|msw|expo-modules-core|expo-router)/)",
   ],
   testEnvironment: "jsdom",
   testEnvironmentOptions: { customExportConditions: [""] },

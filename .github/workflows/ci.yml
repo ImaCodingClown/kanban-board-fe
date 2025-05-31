@@ -18,7 +18,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 23
 
       - name: Set up rust
         uses: actions-rs/toolchain@v1
@@ -30,6 +30,7 @@ jobs:
         run: |
           cd backend
           docker build -t rust-backend-image .
+          cd ..
 
       - name: Install dependencies
         run: npm ci
@@ -39,9 +40,15 @@ jobs:
 
       - name: Start backend witn mongo
         run: |
-          docker compose up -d &&
-          sleep 10 &&
+          docker compose up -d
+
+      - name: health check
+        run: |
+          curl http://localhost:8080/health
+
+      - name: run test
+        run: |
           npm run test:ci
 
       - name: TearDown
-        run: docker-compose down
+        run: docker compose down

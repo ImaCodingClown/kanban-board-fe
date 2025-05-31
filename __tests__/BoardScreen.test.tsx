@@ -1,10 +1,14 @@
 // __tests__/BoardScreen.test.tsx
-import { render, waitFor } from "@testing-library/react-native";
+import {
+  render,
+  waitFor,
+  waitForElementToBeRemoved,
+} from "@testing-library/react-native";
 import { BoardScreen } from "../screens/BoardScreen";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { server } from "../__mocks__/server";
-import { DraxProvider } from "react-native-drax";
+import { act } from "react";
+// import { server } from "../__mocks__/server";
 
 // Allow 'mock-drax-view' as a valid JSX element for testing
 declare global {
@@ -21,37 +25,46 @@ declare global {
     }
   }
 }
+//
+// jest.mock("react-native-drax", () => {
+//   const React = require("react");
+//   const { View } = require("react-native");
+//
+//   return {
+//     DraxProvider: ({ children, ...props }: { children?: React.ReactNode }) => (
+//       <View {...props} testID="mock-drax-provider">
+//         {children}
+//       </View>
+//     ),
+//     DraxView: ({ children, ...props }: any) => (
+//       <View {...props} testID="mock-drax-view">
+//         {children}
+//       </View>
+//     ),
+//   };
+// });
 
-jest.mock("react-native-drax", () => ({
-  DraxProvider: ({ children }: { children?: React.ReactNode }) => (
-    <mock-drax-provider>{children}</mock-drax-provider>
-  ),
-  DraxView: ({
-    children,
-    draggable,
-    payload,
-  }: {
-    children?: React.ReactNode;
-    draggable?: boolean;
-    payload?: any;
-  }) => (
-    <mock-drax-view draggable={draggable} payload={payload}>
-      {children}
-    </mock-drax-view>
-  ),
-}));
-
-beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
-const queryClient = new QueryClient();
 test("renders board data from backend", async () => {
-  const { getByText } = render(
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        suspense: false,
+      },
+    },
+  });
+
+  const renderResult = render(
     <QueryClientProvider client={queryClient}>
       <BoardScreen />
     </QueryClientProvider>,
   );
+
+  const getByText = renderResult.getByText;
+
+  await waitForElementToBeRemoved(() => getByText("Loading board..."), {
+    timeout: 30000,
+  });
 
   await waitFor(() => {
     expect(getByText("To Do")).toBeTruthy();

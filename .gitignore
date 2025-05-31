@@ -41,3 +41,6 @@ app-example
 # test coverage
 coverage
 coverage/
+
+# backend build files
+backend/
