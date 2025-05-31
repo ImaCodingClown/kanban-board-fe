@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { useBoard } from "../hooks/useBoard";
 import { CardModel, ColumnModel } from "../models/board";
-import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -11,7 +10,6 @@ export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
   const [cards, setCards] = useState<(CardModel & { columnId: string })[]>([]);
   const [columns, setColumns] = useState<ColumnModel[]>([]);
-  const router = useRouter();
 
   const board: ColumnModel[] | undefined = data;
 
