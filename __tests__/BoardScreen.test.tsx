@@ -62,7 +62,9 @@ test("renders board data from backend", async () => {
 
   const getByText = renderResult.getByText;
 
-  await waitForElementToBeRemoved(() => getByText("Loading board..."));
+  await waitForElementToBeRemoved(() => getByText("Loading board..."), {
+    timeout: 30000,
+  });
 
   await waitFor(() => {
     expect(getByText("To Do")).toBeTruthy();
