@@ -29,7 +29,7 @@ declare global {
 // jest.mock("react-native-drax", () => {
 //   const React = require("react");
 //   const { View } = require("react-native");
-// 
+//
 //   return {
 //     DraxProvider: ({ children, ...props }: { children?: React.ReactNode }) => (
 //       <View {...props} testID="mock-drax-provider">
