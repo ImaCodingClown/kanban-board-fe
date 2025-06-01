@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
+import { storeToken } from "../store/tokenStore";
 
 export const LoginScreen = ({ navigation }: any) => {
   const [userOrEmail, setUserOrEmail] = useState("");
@@ -11,7 +12,12 @@ export const LoginScreen = ({ navigation }: any) => {
   const handleLogin = async () => {
     try {
       const response = await api.post("/login", { userOrEmail, password });
-      setToken(response.data.token);
+
+      const token = response.data.token;
+      await storeToken(token);
+      setToken(token);
+
+      console.log("your token: " + token);
       navigation.replace("Board");
     } catch (error) {
       console.error(error);

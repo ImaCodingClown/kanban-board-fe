@@ -2,6 +2,8 @@ import { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
+import { storeToken } from "../store/tokenStore";
+import { store } from "expo-router/build/global-state/router-store";
 
 export const SignUpScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState("");
@@ -12,7 +14,12 @@ export const SignUpScreen = ({ navigation }: any) => {
   const handleSignup = async () => {
     try {
       const response = await api.post("/signup", { username, email, password });
-      setToken(response.data.token); // Save JWT
+
+      const token = response.data.token;
+      await storeToken(token);
+      setToken(token);
+
+      console.log("your token: " + token);
       navigation.replace("Board"); // Go to Board screen
     } catch (error) {
       console.error(error);
