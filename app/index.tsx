@@ -1,33 +1,30 @@
-import { AppRegistry } from "react-native";
-import { AuthNavigator } from "../navigation/AuthNavigator";
-import { useAuth } from "../store/authStore";
-import { AppNavigator } from "@/navigation/AppNavigator";
-import { QueryClient, QueryClientProvider } from "react-query";
-import { expo as appName } from "../app.json";
+import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { useAuth } from "@/store/authStore";
 
-async function enableMocking() {
-  if (!__DEV__) {
-    return;
-  }
-
-  await import("../msw.polyfills");
-  const { server } = await import("../__mocks__/server");
-  server.listen();
-}
-
-enableMocking().then(() => {
-  AppRegistry.registerComponent(appName.name, () => App);
-});
-
-const queryClient = new QueryClient();
-
-export default function App() {
+export default function Index() {
+  const router = useRouter();
   const token = useAuth((state) => state.token);
+  const [isReady, setIsReady] = useState(false);
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {" "}
-      {token ? <AppNavigator /> : <AuthNavigator />}{" "}
-    </QueryClientProvider>
-  );
+  // Defer routing to allow _layout.tsx to mount first
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setIsReady(true);
+    }, 0); // wait until next render cycle
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    if (!isReady) return;
+
+    if (token) {
+      router.replace("/board");
+    } else {
+      router.replace("/login");
+    }
+  }, [isReady, token]);
+
+  return null;
 }

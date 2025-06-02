@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
+import { useRouter } from "expo-router";
 import { storeToken } from "../store/tokenStore";
 import { store } from "expo-router/build/global-state/router-store";
 
@@ -10,6 +11,7 @@ export const SignUpScreen = ({ navigation }: any) => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const setToken = useAuth((state) => state.setToken);
+  const router = useRouter();
 
   const handleSignup = async () => {
     try {
@@ -19,8 +21,7 @@ export const SignUpScreen = ({ navigation }: any) => {
       await storeToken(token);
       setToken(token);
 
-      console.log("your token: " + token);
-      navigation.replace("Board"); // Go to Board screen
+      router.replace("/board");
     } catch (error) {
       console.error(error);
       alert("Signup failed");
@@ -52,7 +53,7 @@ export const SignUpScreen = ({ navigation }: any) => {
       <Button title="Sign Up" onPress={handleSignup} />
       <Button
         title="Already have an account? Login"
-        onPress={() => navigation.navigate("Login")}
+        onPress={() => router.push("/login")}
       />
     </View>
   );

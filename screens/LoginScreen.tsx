@@ -1,13 +1,23 @@
-import { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
+import { useState, useRef } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  TextInput as RNTextInput,
+} from "react-native";
 import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
 import { storeToken } from "../store/tokenStore";
+import { useRouter } from "expo-router";
 
-export const LoginScreen = ({ navigation }: any) => {
+export const LoginScreen = () => {
   const [userOrEmail, setUserOrEmail] = useState("");
   const [password, setPassword] = useState("");
+  const passwordRef = useRef<RNTextInput>(null);
   const setToken = useAuth((state) => state.setToken);
+  const router = useRouter();
 
   const handleLogin = async () => {
     try {
@@ -18,7 +28,7 @@ export const LoginScreen = ({ navigation }: any) => {
       setToken(token);
 
       console.log("your token: " + token);
-      navigation.replace("Board");
+      router.replace("/board");
     } catch (error) {
       console.error(error);
       alert("Login failed");
@@ -33,6 +43,8 @@ export const LoginScreen = ({ navigation }: any) => {
         placeholder="Username or Email"
         value={userOrEmail}
         onChangeText={setUserOrEmail}
+        returnKeyType="next"
+        onSubmitEditing={() => passwordRef.current?.focus()}
       />
       <TextInput
         style={styles.input}
@@ -40,11 +52,13 @@ export const LoginScreen = ({ navigation }: any) => {
         secureTextEntry
         value={password}
         onChangeText={setPassword}
+        returnKeyType="done"
+        onSubmitEditing={handleLogin}
       />
       <Button title="Login" onPress={handleLogin} />
       <Button
         title="Don't have an account? Signup"
-        onPress={() => navigation.navigate("Signup")}
+        onPress={() => router.push("/signup")}
       />
     </View>
   );

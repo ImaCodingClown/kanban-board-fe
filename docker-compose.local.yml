@@ -1,0 +1,22 @@
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  rust-backend:
+    build:
+      context: .
+      dockerfile: ${LOCALBACKEND}/Dockerfile
+    image: rust-backend-image
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/test_db
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
