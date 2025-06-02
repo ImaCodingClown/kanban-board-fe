@@ -27,7 +27,6 @@ export const LoginScreen = () => {
       await storeToken(token);
       setToken(token);
 
-      console.log("your token: " + token);
       router.replace("/board");
     } catch (error) {
       console.error(error);
