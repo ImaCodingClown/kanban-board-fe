@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
+import { storeToken } from "../store/tokenStore";
 import { useRouter } from "expo-router";
 
 export const LoginScreen = () => {
@@ -21,7 +22,11 @@ export const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       const response = await api.post("/login", { userOrEmail, password });
-      setToken(response.data.token);
+
+      const token = response.data.token;
+      await storeToken(token);
+      setToken(token);
+
       router.replace("/board");
     } catch (error) {
       console.error(error);
