@@ -1,11 +1,14 @@
 import { Stack, usePathname, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
+import { NavigationBar } from "../components/navigationBar";
 
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
   const [isMockingEnabled, setMockingEnabled] = useState(!__DEV__);
+  const pathname = usePathname();
+
   useEffect(() => {
     async function enableMocking() {
       if (!__DEV__) return;
@@ -21,12 +24,13 @@ export default function RootLayout() {
     return null;
   }
 
-  const pathname = usePathname();
-  const router = useRouter();
+  const hideNavBarRoutes = ["/", "/login", "/signup"];
+  const showNavBar = !hideNavBarRoutes.includes(pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack />
+      <Stack screenOptions={{ headerShown: false }} />
+      {showNavBar && <NavigationBar />}
     </QueryClientProvider>
   );
 }
