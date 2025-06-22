@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
 
@@ -20,6 +20,9 @@ export default function RootLayout() {
   if (!isMockingEnabled) {
     return null;
   }
+
+  const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <QueryClientProvider client={queryClient}>
