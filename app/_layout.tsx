@@ -24,7 +24,7 @@ export default function RootLayout() {
     return null;
   }
 
-  const hideNavBarRoutes = ["/", "/login", "/signup"];
+  const hideNavBarRoutes = ["/login", "/signup"];
   const showNavBar = !hideNavBarRoutes.includes(pathname);
 
   return (

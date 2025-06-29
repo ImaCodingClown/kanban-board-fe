@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  Touchable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -39,7 +40,7 @@ export const NavigationBar: React.FC = () => {
         <View style={styles.navContent}>
           {/* Home Button */}
           <TouchableOpacity style={styles.homeButton} onPress={handleHomePress}>
-            <Ionicons name="home" size={24} color="#007AFF" />
+            {/* <Ionicons name="home" size={24} color="#007AFF" /> */}
             <Text style={styles.homeText}>Home</Text>
           </TouchableOpacity>
 
@@ -128,7 +129,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F8FF",
   },
   homeText: {
-    marginLeft: 8,
+    //marginLeft: 8,
     fontSize: 16,
     color: "#007AFF",
     fontWeight: "600",
