@@ -53,7 +53,7 @@ export const SignUpScreen = ({ navigation }: any) => {
       <Button title="Sign Up" onPress={handleSignup} />
       <Button
         title="Already have an account? Login"
-        onPress={() => router.push("login")}
+        onPress={() => router.push("/login")}
       />
     </View>
   );
