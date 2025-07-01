@@ -26,7 +26,7 @@ export const BoardScreen = () => {
         col.cards.map((card: CardModel) => ({
           ...card,
           columnId: col.id,
-        }))
+        })),
       );
       setCards(allCards);
     }
@@ -42,15 +42,15 @@ export const BoardScreen = () => {
       prev.map((card) =>
         card.id === draggedCardId
           ? { ...card, columnId: destinationColumnId }
-          : card
-      )
+          : card,
+      ),
     );
   };
 
   const handleAddCard = async (
     title: string,
     description: string,
-    columnId: string
+    columnId: string,
   ) => {
     try {
       const newCard = await addCard({ title, description, columnId });
