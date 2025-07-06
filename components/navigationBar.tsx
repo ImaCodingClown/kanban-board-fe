@@ -30,6 +30,10 @@ export const NavigationBar: React.FC = () => {
     }
   };
 
+  // const handleCreateBoard = () => {
+  //   router.push("/create_Board");
+  // };
+
   const toggleProfileDropdown = () => {
     setShowProfileDropdown(!showProfileDropdown);
   };
@@ -41,49 +45,58 @@ export const NavigationBar: React.FC = () => {
           {/* Home Button */}
           <TouchableOpacity style={styles.homeButton} onPress={handleHomePress}>
             {/* <Ionicons name="home" size={24} color="#007AFF" /> */}
-            <Text style={styles.homeText}>Home</Text>
+            <Text style={styles.homeText}>LJY</Text>
           </TouchableOpacity>
 
-          {/* User Profile Section */}
-          <View style={styles.profileSection}>
+          {/* Right Section with Extra Button */}
+          <View style={styles.rightButton}>
             <TouchableOpacity
-              style={styles.profileButton}
-              onPress={toggleProfileDropdown}
+              style={styles.extraButton} /*onPress={handleCreateBoard}*/
             >
-              <Ionicons name="person-circle" size={32} color="#007AFF" />
-              <Ionicons
-                name={showProfileDropdown ? "chevron-up" : "chevron-down"}
-                size={16}
-                color="#007AFF"
-              />
+              <Text style={styles.extraButtonText}>Create Board</Text>
             </TouchableOpacity>
 
-            {/* Dropdown Menu */}
-            {showProfileDropdown && (
-              <View style={styles.dropdown}>
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setShowProfileDropdown(false);
-                    // Add profile navigation if you have a profile screen
-                    // router.push('/profile');
-                  }}
-                >
-                  <Ionicons name="person" size={20} color="#333" />
-                  <Text style={styles.dropdownText}>Profile</Text>
-                </TouchableOpacity>
+            {/* User Profile Section */}
+            <View style={styles.profileSection}>
+              <TouchableOpacity
+                style={styles.profileButton}
+                onPress={toggleProfileDropdown}
+              >
+                <Ionicons name="person-circle" size={28} color="#007AFF" />
+                <Ionicons
+                  name={showProfileDropdown ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color="#007AFF"
+                />
+              </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[styles.dropdownItem, styles.lastDropdownItem]}
-                  onPress={handleLogout}
-                >
-                  <Ionicons name="log-out" size={20} color="#FF3B30" />
-                  <Text style={[styles.dropdownText, styles.logoutText]}>
-                    Logout
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              {/* Dropdown Menu */}
+              {showProfileDropdown && (
+                <View style={styles.dropdown}>
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setShowProfileDropdown(false);
+                      // Add profile navigation if you have a profile screen
+                      // router.push('/profile');
+                    }}
+                  >
+                    <Ionicons name="person" size={20} color="#333" />
+                    <Text style={styles.dropdownText}>Profile</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.dropdownItem, styles.lastDropdownItem]}
+                    onPress={handleLogout}
+                  >
+                    <Ionicons name="log-out" size={20} color="#FF3B30" />
+                    <Text style={[styles.dropdownText, styles.logoutText]}>
+                      Logout
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
         </View>
       </View>
@@ -130,7 +143,7 @@ const styles = StyleSheet.create({
   },
   homeText: {
     //marginLeft: 8,
-    fontSize: 16,
+    fontSize: 20,
     color: "#007AFF",
     fontWeight: "600",
   },
@@ -140,6 +153,7 @@ const styles = StyleSheet.create({
   profileButton: {
     flexDirection: "row",
     alignItems: "center",
+    marginLeft: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -182,5 +196,22 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: "#FF3B30",
+  },
+
+  rightButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  extraButton: {
+    marginLeft: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: "#F0F8FF",
+  },
+  extraButtonText: {
+    fontSize: 20,
+    color: "#007AFF",
+    fontWeight: "600",
   },
 });
