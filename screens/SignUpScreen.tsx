@@ -44,11 +44,15 @@ export const SignUpScreen = ({ navigation }: any) => {
         value={password}
         onChangeText={setPassword}
       />
-      <Button title="Sign Up" onPress={handleSignup} />
-      <Button
-        title="Already have an account? Login"
-        onPress={() => router.push("/login")}
-      />
+      <View style={styles.space}>
+        <Button title="Sign Up" onPress={handleSignup} />
+      </View>
+      <View style={styles.space}>
+        <Button
+          title="Already have an account? Login"
+          onPress={() => router.push("/login")}
+        />
+      </View>
     </View>
   );
 };
@@ -57,4 +61,5 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 20 },
   title: { fontSize: 24, marginBottom: 20, textAlign: "center" },
   input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 5 },
+  space: { marginBottom: 5, width: "100%" },
 });

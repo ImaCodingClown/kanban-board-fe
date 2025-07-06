@@ -1,19 +1,23 @@
 export interface CardModel {
-  id: string;
+  id?: string;
   title: string;
   description?: string;
   assignee?: string;
-  story_points?: number;
+  storyPoints?: number;
   priority?: string;
 }
 
 export interface ColumnModel {
-  id: string;
   title: string;
   cards: CardModel[];
 }
 
-export type BoardModel = ColumnModel[];
+export interface BoardModel {
+  id?: string;
+  team: string;
+  iteration: string;
+  columns: ColumnModel[];
+}
 
 export interface BoardResponse {
   board: BoardModel;
