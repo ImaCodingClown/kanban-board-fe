@@ -9,7 +9,7 @@ const { width } = Dimensions.get("window");
 export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
   const [cards, setCards] = useState<(CardModel & { columnTitle: string })[]>(
-    []
+    [],
   );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
 
@@ -24,7 +24,7 @@ export const BoardScreen = () => {
         col.cards.map((card: CardModel) => ({
           ...card,
           columnTitle: col.title,
-        }))
+        })),
       );
       setCards(allCards);
     }
@@ -40,8 +40,8 @@ export const BoardScreen = () => {
       prev.map((card) =>
         card.id === draggedCardId
           ? { ...card, columnTitle: destinationColumnTitle }
-          : card
-      )
+          : card,
+      ),
     );
   };
 
