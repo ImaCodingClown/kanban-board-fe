@@ -1,4 +1,4 @@
-import { Stack, usePathname, useRouter } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { NavigationBar } from "../components/navigationBar";

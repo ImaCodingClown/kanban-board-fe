@@ -4,7 +4,7 @@ import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
 import { useRouter } from "expo-router";
 import { storeToken } from "../store/tokenStore";
-import { store } from "expo-router/build/global-state/router-store";
+// import { store } from "expo-router/build/global-state/router-store";
 
 export const SignUpScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState("");

@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  Touchable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
