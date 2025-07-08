@@ -5,13 +5,15 @@ import { useBoard } from "../hooks/useBoard";
 import { CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
 import { addCard } from "@/services/card";
-import { Button } from "react-native";
 
 const { width } = Dimensions.get("window");
 
 export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
-  const [cards, setCards] = useState<(CardModel & { columnId: string })[]>([]);
+  console.log("Board data: ", data);
+  const [cards, setCards] = useState<(CardModel & { columnTitle: string })[]>(
+    []
+  );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
 
@@ -25,8 +27,8 @@ export const BoardScreen = () => {
       const allCards = board.flatMap((col: ColumnModel) =>
         col.cards.map((card: CardModel) => ({
           ...card,
-          columnId: col.id,
-        })),
+          columnTitle: col.title,
+        }))
       );
       setCards(allCards);
     }
@@ -36,21 +38,21 @@ export const BoardScreen = () => {
 
   if (isLoading) return <Text>Loading board...</Text>;
 
-  const onReceiveDragDrop = (event: any, destinationColumnId: string) => {
+  const onReceiveDragDrop = (event: any, destinationColumnTitle: string) => {
     const draggedCardId = event.dragged.payload;
     setCards((prev) =>
       prev.map((card) =>
         card.id === draggedCardId
-          ? { ...card, columnId: destinationColumnId }
-          : card,
-      ),
+          ? { ...card, columnTitle: destinationColumnTitle }
+          : card
+      )
     );
   };
 
   const handleAddCard = async (
     title: string,
     description: string,
-    columnId: string,
+    columnId: string
   ) => {
     try {
       const newCard = await addCard({ title, description, columnId });
@@ -63,7 +65,6 @@ export const BoardScreen = () => {
   return (
     <DraxProvider>
       <View style={styles.screen}>
-        <Button title="Add Card" onPress={() => setShowModal(true)} />
         <AddCardModal
           visible={showModal}
           onClose={() => setShowModal(false)}
@@ -71,39 +72,43 @@ export const BoardScreen = () => {
           columns={columns}
         />
         <View style={styles.board}>
-          {columns.map((col) => (
-            <DraxView
-              key={col.id}
-              style={styles.column}
-              receivingStyle={styles.receiving}
-              onReceiveDragDrop={(event) => onReceiveDragDrop(event, col.id)}
-            >
-              <Text style={styles.columnTitle}>{col.title}</Text>
-              {cards
-                .filter((card) => card.columnId === col.id)
-                .map((card) => (
-                  <DraxView
-                    key={card.id}
-                    style={styles.card}
-                    draggingStyle={styles.dragging}
-                    hoverDraggingStyle={styles.hoverDragging}
-                    dragReleasedStyle={styles.dragging}
-                    dragPayload={card.id}
-                    longPressDelay={150}
-                    receptive={false} // Important so card itself doesn't act like a drop target
-                    draggable
-                  >
-                    <Text>{card.title}</Text>
-                    {card.description && <Text>{card.description}</Text>}
-                    {card.assignee && <Text>Assignee: {card.assignee}</Text>}
-                    {card.story_points && (
-                      <Text>Story Points: {card.story_points}</Text>
-                    )}
-                    {card.priority && <Text>Priority: {card.priority}</Text>}
-                  </DraxView>
-                ))}
-            </DraxView>
-          ))}
+          {columns
+            .filter((col) => typeof col.title === "string")
+            .map((col) => (
+              <DraxView
+                key={col.title as string}
+                style={styles.column}
+                receivingStyle={styles.receiving}
+                onReceiveDragDrop={(event) =>
+                  onReceiveDragDrop(event, col.title as string)
+                }
+              >
+                <Text style={styles.columnTitle}>{col.title}</Text>
+                {cards
+                  .filter((card) => card.columnTitle === col.title)
+                  .map((card) => (
+                    <DraxView
+                      key={card.id}
+                      style={styles.card}
+                      draggingStyle={styles.dragging}
+                      hoverDraggingStyle={styles.hoverDragging}
+                      dragReleasedStyle={styles.dragging}
+                      dragPayload={card.id}
+                      longPressDelay={150}
+                      receptive={false} // Important so card itself doesn't act like a drop target
+                      draggable
+                    >
+                      <Text>{card.title}</Text>
+                      {card.description && <Text>{card.description}</Text>}
+                      {card.assignee && <Text>Assignee: {card.assignee}</Text>}
+                      {card.storyPoints && (
+                        <Text>Story Points: {card.storyPoints}</Text>
+                      )}
+                      {card.priority && <Text>Priority: {card.priority}</Text>}
+                    </DraxView>
+                  ))}
+              </DraxView>
+            ))}
         </View>
       </View>
     </DraxProvider>

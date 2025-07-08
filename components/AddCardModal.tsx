@@ -18,13 +18,13 @@ export const AddCardModal = ({
 }: Props) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [columnId, setColumnId] = useState(""); // or columns[0]?.id || ""
+  const [columnTitle, setColumnTitle] = useState("");
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
     try {
-      await onSubmit(title, description, columnId); // ✅ Await the backend call
+      await onSubmit(title, description, columnTitle); // ✅ Await the backend call
       setTitle("");
       setDescription("");
       onClose();
@@ -54,12 +54,16 @@ export const AddCardModal = ({
           {/* Column picker */}
           <Text style={{ marginTop: 10 }}>Add to column:</Text>
           <Picker
-            selectedValue={columnId}
-            onValueChange={(itemValue: string) => setColumnId(itemValue)}
+            selectedValue={columnTitle}
+            onValueChange={(itemValue: string) => setColumnTitle(itemValue)}
             style={styles.picker}
           >
-            {columns.map((col) => (
-              <Picker.Item key={col.id} label={col.title} value={col.id} />
+            {(columns ?? []).map((col) => (
+              <Picker.Item
+                key={col.title}
+                label={col.title}
+                value={col.title}
+              />
             ))}
           </Picker>
           <Button title="Submit" onPress={handleSubmit} />
