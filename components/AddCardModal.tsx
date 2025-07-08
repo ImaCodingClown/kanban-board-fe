@@ -24,8 +24,7 @@ export const AddCardModal = ({
     if (!title.trim()) return;
 
     try {
-      await onSubmit(title, description, columnTitle); // ✅ Await the backend call
-      setTitle("");
+      await onSubmit(title, description, columnTitle);
       setDescription("");
       onClose();
     } catch (error) {
