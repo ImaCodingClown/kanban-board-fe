@@ -17,7 +17,7 @@ export const NavigationBar: React.FC<{
   onSubmitCard: (
     title: string,
     description: string,
-    columnId: string
+    columnId: string,
   ) => Promise<void>;
 }> = ({ columns, onSubmitCard }) => {
   const router = useRouter();
@@ -42,7 +42,7 @@ export const NavigationBar: React.FC<{
   const handleSubmitCard = async (
     title: string,
     description: string,
-    columnId: string
+    columnId: string,
   ) => {
     await onSubmitCard(title, description, columnId);
   };

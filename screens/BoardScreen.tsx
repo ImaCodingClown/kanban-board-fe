@@ -12,7 +12,7 @@ export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
   console.log("Board data: ", data);
   const [cards, setCards] = useState<(CardModel & { columnTitle: string })[]>(
-    []
+    [],
   );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -28,7 +28,7 @@ export const BoardScreen = () => {
         col.cards.map((card: CardModel) => ({
           ...card,
           columnTitle: col.title,
-        }))
+        })),
       );
       setCards(allCards);
     }
@@ -44,15 +44,15 @@ export const BoardScreen = () => {
       prev.map((card) =>
         card.id === draggedCardId
           ? { ...card, columnTitle: destinationColumnTitle }
-          : card
-      )
+          : card,
+      ),
     );
   };
 
   const handleAddCard = async (
     title: string,
     description: string,
-    columnId: string
+    columnId: string,
   ) => {
     try {
       const newCard = await addCard({ title, description, columnId });
