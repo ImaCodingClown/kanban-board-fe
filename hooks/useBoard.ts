@@ -1,24 +1,23 @@
 import { useQuery } from "react-query";
-
 import { ColumnModel } from "@/models/board";
+import { useAuth } from "@/store/authStore";
+import { api } from "@/services/api";
 
 export const useBoard = () => {
-  return useQuery<ColumnModel[], unknown>({
-    queryKey: ["board"],
-    queryFn: async () => {
-      const response = await fetch("http://localhost:8080/board", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team: "default" }),
-      });
+  const user = useAuth((state) => state.user);
 
-      if (!response.ok) {
-        const txt = await response.text();
-        throw new Error(`Error fetching board: ${txt}`);
+  return useQuery<ColumnModel[], Error>({
+    queryKey: ["board", user?.teams[0]],
+    enabled: Boolean(user?.teams?.length),
+    queryFn: async () => {
+      if (!user) {
+        throw new Error("User not authenticated");
       }
 
-      const data: ColumnModel[] = await response.json();
-      return data;
+      const response = await api.get<ColumnModel[]>("/board", {
+        params: { team: user.teams[0] },
+      });
+      return response.data;
     },
   });
 };

@@ -26,10 +26,16 @@ export default function RootLayout() {
 
   const hideNavBarRoutes = ["/login", "/signup"];
   const showNavBar = !hideNavBarRoutes.includes(pathname);
+  const NAVBAR_HEIGHT = 60;
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { paddingTop: showNavBar ? NAVBAR_HEIGHT : 0 },
+        }}
+      />
       {showNavBar && <NavigationBar />}
     </QueryClientProvider>
   );
