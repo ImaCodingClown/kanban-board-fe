@@ -9,11 +9,21 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
+import { AddCardModal } from "./AddCardModal";
+import { ColumnModel } from "../models/board";
 
-export const NavigationBar: React.FC = () => {
+export const NavigationBar: React.FC<{
+  columns: ColumnModel[];
+  onSubmitCard: (
+    title: string,
+    description: string,
+    columnId: string
+  ) => Promise<void>;
+}> = ({ columns, onSubmitCard }) => {
   const router = useRouter();
-  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const setToken = useAuth((state) => state.setToken);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleHomePress = () => {
     router.push("/board");
@@ -29,12 +39,16 @@ export const NavigationBar: React.FC = () => {
     }
   };
 
-  // const handleCreateBoard = () => {
-  //   router.push("/create_Board");
-  // };
-
   const toggleProfileDropdown = () => {
     setShowProfileDropdown(!showProfileDropdown);
+  };
+
+  const handleSubmitCard = async (
+    title: string,
+    description: string,
+    columnId: string
+  ) => {
+    await onSubmitCard(title, description, columnId);
   };
 
   return (
@@ -43,16 +57,20 @@ export const NavigationBar: React.FC = () => {
         <View style={styles.navContent}>
           {/* Home Button */}
           <TouchableOpacity style={styles.homeButton} onPress={handleHomePress}>
-            {/* <Ionicons name="home" size={24} color="#007AFF" /> */}
             <Text style={styles.homeText}>LJY</Text>
           </TouchableOpacity>
 
-          {/* Right Section with Extra Button */}
+          {/* Right Section with Extra Buttons */}
           <View style={styles.rightButton}>
-            <TouchableOpacity
-              style={styles.extraButton} /*onPress={handleCreateBoard}*/
-            >
+            <TouchableOpacity style={styles.extraButton}>
               <Text style={styles.extraButtonText}>Create Board</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.extraButton}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text style={styles.extraButtonText}>Add Card</Text>
             </TouchableOpacity>
 
             {/* User Profile Section */}
@@ -76,8 +94,6 @@ export const NavigationBar: React.FC = () => {
                     style={styles.dropdownItem}
                     onPress={() => {
                       setShowProfileDropdown(false);
-                      // Add profile navigation if you have a profile screen
-                      // router.push('/profile');
                     }}
                   >
                     <Ionicons name="person" size={20} color="#333" />
@@ -99,6 +115,12 @@ export const NavigationBar: React.FC = () => {
           </View>
         </View>
       </View>
+      <AddCardModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSubmit={handleSubmitCard}
+        columns={columns}
+      />
     </SafeAreaView>
   );
 };
@@ -119,10 +141,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
@@ -168,10 +187,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E1E1E1",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 8,
