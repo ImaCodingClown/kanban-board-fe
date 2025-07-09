@@ -71,8 +71,6 @@
 //   });
 // });
 
-import React from "react";
-
 test("renders board data from backend", () => {
   expect(true).toBe(true);
 });

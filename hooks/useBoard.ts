@@ -1,13 +1,23 @@
 import { useQuery } from "react-query";
-import axios from "axios";
 import { ColumnModel } from "@/models/board";
+import { useAuth } from "@/store/authStore";
+import { api } from "@/services/api";
 
 export const useBoard = () => {
-  return useQuery<ColumnModel[], unknown>({
-    queryKey: ["board"],
+  const user = useAuth((state) => state.user);
+
+  return useQuery<ColumnModel[], Error>({
+    queryKey: ["board", user?.teams[0]],
+    enabled: Boolean(user?.teams?.length),
     queryFn: async () => {
-      const res = await axios.get("http://localhost:8080/board");
-      return res.data;
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
+      const response = await api.get<ColumnModel[]>("/board", {
+        params: { team: user.teams[0] },
+      });
+      return response.data;
     },
   });
 };
