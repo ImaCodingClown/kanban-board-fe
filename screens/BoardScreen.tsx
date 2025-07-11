@@ -3,15 +3,18 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { useBoard } from "../hooks/useBoard";
 import { CardModel, ColumnModel } from "../models/board";
+import { AddCardModal } from "@/components/AddCardModal";
+import { addCard } from "@/services/card";
 
 const { width } = Dimensions.get("window");
 
 export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
   const [cards, setCards] = useState<(CardModel & { columnTitle: string })[]>(
-    [],
+    []
   );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
+  const [showModal, setShowModal] = useState(false);
 
   const board: ColumnModel[] | undefined = data;
 
@@ -24,7 +27,7 @@ export const BoardScreen = () => {
         col.cards.map((card: CardModel) => ({
           ...card,
           columnTitle: col.title,
-        })),
+        }))
       );
       setCards(allCards);
     }
@@ -40,51 +43,72 @@ export const BoardScreen = () => {
       prev.map((card) =>
         card.id === draggedCardId
           ? { ...card, columnTitle: destinationColumnTitle }
-          : card,
-      ),
+          : card
+      )
     );
+  };
+
+  const handleAddCard = async (
+    title: string,
+    description: string,
+    columnTitle: string
+  ) => {
+    try {
+      const newCard = await addCard({ title, description, columnTitle });
+      setCards((prev) => [...prev, { ...newCard, columnTitle }]);
+    } catch (error) {
+      console.error("Failed to add card: ", error);
+    }
   };
 
   return (
     <DraxProvider>
-      <View style={styles.board}>
-        {columns
-          .filter((col) => typeof col.title === "string")
-          .map((col) => (
-            <DraxView
-              key={col.title as string}
-              style={styles.column}
-              receivingStyle={styles.receiving}
-              onReceiveDragDrop={(event) =>
-                onReceiveDragDrop(event, col.title as string)
-              }
-            >
-              <Text style={styles.columnTitle}>{col.title}</Text>
-              {cards
-                .filter((card) => card.columnTitle === col.title)
-                .map((card) => (
-                  <DraxView
-                    key={card.id}
-                    style={styles.card}
-                    draggingStyle={styles.dragging}
-                    hoverDraggingStyle={styles.hoverDragging}
-                    dragReleasedStyle={styles.dragging}
-                    dragPayload={card.id}
-                    longPressDelay={150}
-                    receptive={false} // Important so card itself doesn't act like a drop target
-                    draggable
-                  >
-                    <Text>{card.title}</Text>
-                    {card.description && <Text>{card.description}</Text>}
-                    {card.assignee && <Text>Assignee: {card.assignee}</Text>}
-                    {card.storyPoints && (
-                      <Text>Story Points: {card.storyPoints}</Text>
-                    )}
-                    {card.priority && <Text>Priority: {card.priority}</Text>}
-                  </DraxView>
-                ))}
-            </DraxView>
-          ))}
+      <View style={styles.screen}>
+        <AddCardModal
+          visible={showModal}
+          onClose={() => setShowModal(false)}
+          onSubmit={handleAddCard}
+          columns={columns}
+        />
+        <View style={styles.board}>
+          {columns
+            .filter((col) => typeof col.title === "string")
+            .map((col) => (
+              <DraxView
+                key={col.title as string}
+                style={styles.column}
+                receivingStyle={styles.receiving}
+                onReceiveDragDrop={(event) =>
+                  onReceiveDragDrop(event, col.title as string)
+                }
+              >
+                <Text style={styles.columnTitle}>{col.title}</Text>
+                {cards
+                  .filter((card) => card.columnTitle === col.title)
+                  .map((card) => (
+                    <DraxView
+                      key={card.id}
+                      style={styles.card}
+                      draggingStyle={styles.dragging}
+                      hoverDraggingStyle={styles.hoverDragging}
+                      dragReleasedStyle={styles.dragging}
+                      dragPayload={card.id}
+                      longPressDelay={150}
+                      receptive={false} // Important so card itself doesn't act like a drop target
+                      draggable
+                    >
+                      <Text>{card.title}</Text>
+                      {card.description && <Text>{card.description}</Text>}
+                      {card.assignee && <Text>Assignee: {card.assignee}</Text>}
+                      {card.storyPoints && (
+                        <Text>Story Points: {card.storyPoints}</Text>
+                      )}
+                      {card.priority && <Text>Priority: {card.priority}</Text>}
+                    </DraxView>
+                  ))}
+              </DraxView>
+            ))}
+        </View>
       </View>
     </DraxProvider>
   );
@@ -136,5 +160,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
+  },
+  screen: {
+    flex: 1,
+    padding: 10,
   },
 });
