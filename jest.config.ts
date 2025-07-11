@@ -1,7 +1,7 @@
 module.exports = {
   preset: "jest-expo",
   transform: {
-    "^.+\\.(js|jsx|ts|tsx)$": "babel-jest",
+    "^.+\.(js|jsx|ts|tsx)$": "babel-jest",
   },
   moduleNameMapper: {
     "^msw/node$": require.resolve("msw/node"),
