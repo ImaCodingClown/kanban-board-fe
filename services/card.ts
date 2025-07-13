@@ -1,19 +1,27 @@
-export const addCard = async (cardData: {
+import { api } from "./api";
+
+export const addCard = async ({
+  title,
+  description,
+  columnTitle,
+  team,
+}: {
   title: string;
   description?: string;
   columnTitle: string;
+  team: string;
 }) => {
-  const response = await fetch("/api/cards", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(cardData),
+  const response = await api.post("/v1/card", {
+    title,
+    description,
+    column_name: columnTitle,
+    team,
   });
 
-  if (!response.ok) {
-    throw new Error("Failed to add card");
-  }
+  return response.data;
+};
 
-  return await response.json();
+export const getColumns = async (team: string) => {
+  const response = await api.get(`/v1/columns?team=${team}`);
+  return response.data;
 };

@@ -11,19 +11,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
 import { AddCardModal } from "./AddCardModal";
 import { ColumnModel } from "../models/board";
+import { addCard, getColumns } from "@/services/card";
 
 export const NavigationBar: React.FC<{
   columns: ColumnModel[];
   onSubmitCard: (
     title: string,
     description: string,
-    columnId: string
+    columnTitle: string
   ) => Promise<void>;
-}> = ({ columns, onSubmitCard }) => {
+}> = ({ onSubmitCard }) => {
   const router = useRouter();
   const setToken = useAuth((state) => state.setToken);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [columns, setColumns] = useState<string[]>([]);
 
   const handleHomePress = () => {
     router.push("/board");
@@ -46,9 +48,35 @@ export const NavigationBar: React.FC<{
   const handleSubmitCard = async (
     title: string,
     description: string,
-    columnId: string
+    columnTitle: string
   ) => {
-    await onSubmitCard(title, description, columnId);
+    const team = useAuth.getState().user?.teams?.[0];
+    if (!team) {
+      console.error("No team for the user.");
+      return;
+    }
+
+    try {
+      await addCard({ title, description, columnTitle, team });
+    } catch (e) {
+      console.error("Adding card failed: ", e);
+    }
+  };
+
+  const handleOpenModal = async () => {
+    const team = useAuth.getState().user?.teams?.[0];
+    if (!team) {
+      console.error("No team for the user.");
+      return;
+    }
+
+    try {
+      const columnTitles = await getColumns(team);
+      setColumns(columnTitles);
+      setModalVisible(true);
+    } catch (e) {
+      console.error("Failed to fetch columns:", e);
+    }
   };
 
   return (
@@ -119,7 +147,6 @@ export const NavigationBar: React.FC<{
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSubmit={handleSubmitCard}
-        columns={columns}
       />
     </SafeAreaView>
   );
