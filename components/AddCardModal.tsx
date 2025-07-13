@@ -1,30 +1,50 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { ColumnModel } from "../models/board";
+import { useAuth } from "@/store/authStore";
+import { getColumns } from "@/services/card";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (title: string, description: string, columnId: string) => void;
-  columns: ColumnModel[];
+  onSubmit: (title: string, description: string, columeTitle: string) => void;
 };
 
-export const AddCardModal = ({
-  visible,
-  onClose,
-  onSubmit,
-  columns,
-}: Props) => {
+export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [columnTitle, setColumnTitle] = useState("");
+  const [columns, setColumns] = useState<string[]>([]);
+
+  const team = useAuth.getState().user?.teams?.[0];
+
+  useEffect(() => {
+    const fetchColumns = async () => {
+      if (!team) {
+        console.warn("No team assigned to user");
+        return;
+      }
+
+      try {
+        const data = await getColumns(team);
+        setColumns(data);
+        if (data.length > 0) setColumnTitle(data[0]);
+      } catch (error) {
+        console.error("Failed to fetch columns: ", error);
+      }
+    };
+
+    if (visible) fetchColumns();
+  }, [visible]);
+
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
     try {
-      await onSubmit(title, description, columnTitle);
+      onSubmit(title, description, columnTitle);
+      setTitle("");
       setDescription("");
       onClose();
     } catch (error) {
@@ -58,11 +78,7 @@ export const AddCardModal = ({
             style={styles.picker}
           >
             {(columns ?? []).map((col) => (
-              <Picker.Item
-                key={col.title}
-                label={col.title}
-                value={col.title}
-              />
+              <Picker.Item key={col} label={col} value={col} />
             ))}
           </Picker>
           <Button title="Submit" onPress={handleSubmit} />

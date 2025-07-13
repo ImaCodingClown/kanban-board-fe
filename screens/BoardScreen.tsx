@@ -5,6 +5,7 @@ import { useBoard } from "../hooks/useBoard";
 import { CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
 import { addCard } from "@/services/card";
+import { useAuth } from "@/store/authStore";
 
 const { width } = Dimensions.get("window");
 
@@ -53,8 +54,15 @@ export const BoardScreen = () => {
     description: string,
     columnTitle: string
   ) => {
+    const team = useAuth.getState().user?.teams?.[0];
+
+    if (!team) {
+      console.error("No team found for the user.");
+      return;
+    }
+
     try {
-      const newCard = await addCard({ title, description, columnTitle });
+      const newCard = await addCard({ title, description, columnTitle, team });
       setCards((prev) => [...prev, { ...newCard, columnTitle }]);
     } catch (error) {
       console.error("Failed to add card: ", error);
@@ -68,7 +76,6 @@ export const BoardScreen = () => {
           visible={showModal}
           onClose={() => setShowModal(false)}
           onSubmit={handleAddCard}
-          columns={columns}
         />
         <View style={styles.board}>
           {columns
