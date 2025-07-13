@@ -21,6 +21,7 @@ export const NavigationBar: React.FC<{
     columnTitle: string
   ) => Promise<void>;
 }> = ({ onSubmitCard }) => {
+
   const router = useRouter();
   const setToken = useAuth((state) => state.setToken);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
