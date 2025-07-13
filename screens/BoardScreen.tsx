@@ -81,6 +81,7 @@ export const BoardScreen = () => {
                 onReceiveDragDrop={(event) =>
                   onReceiveDragDrop(event, col.title as string)
                 }
+                testID={`column-${col.title}`}
               >
                 <Text style={styles.columnTitle}>{col.title}</Text>
                 {cards
