@@ -46,7 +46,7 @@ export const BoardScreen = () => {
 
       for (let i = 0; i < newColumns.length; i++) {
         const cardIndex = newColumns[i].cards.findIndex(
-          (card) => card.id === draggedCardId
+          (card) => card.id === draggedCardId,
         );
         if (cardIndex !== -1) {
           sourceColumnIndex = i;
@@ -60,7 +60,7 @@ export const BoardScreen = () => {
       }
 
       const destinationColumnIndex = newColumns.findIndex(
-        (col) => col.title === destinationColumnTitle
+        (col) => col.title === destinationColumnTitle,
       );
 
       if (
@@ -72,7 +72,7 @@ export const BoardScreen = () => {
 
       const [cardToMove] = newColumns[sourceColumnIndex].cards.splice(
         draggedCardIndex,
-        1
+        1,
       );
 
       if (cardToMove) {
@@ -86,7 +86,7 @@ export const BoardScreen = () => {
   const handleAddCard = async (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
 
@@ -105,7 +105,7 @@ export const BoardScreen = () => {
       setColumns((prev) => {
         const newColumns = [...prev];
         const columnIndex = newColumns.findIndex(
-          (col) => col.title === columnTitle
+          (col) => col.title === columnTitle,
         );
         if (columnIndex > -1) {
           newColumns[columnIndex].cards.push(newCard);
