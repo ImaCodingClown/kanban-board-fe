@@ -9,44 +9,78 @@ import { useAuth } from "@/store/authStore";
 
 const { width } = Dimensions.get("window");
 
+// A simple utility to generate temporary unique IDs
+const generateTempId = () =>
+  `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
 export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
-  const [cards, setCards] = useState<(CardModel & { columnTitle: string })[]>(
-    []
-  );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
 
   const board: ColumnModel[] | undefined = data;
 
   React.useEffect(() => {
-    const controller = new AbortController();
-
     if (board) {
-      setColumns(board);
-      const allCards = board.flatMap((col: ColumnModel) =>
-        col.cards.map((card: CardModel) => ({
+      const boardWithIds = board.map((col) => ({
+        ...col,
+        cards: col.cards.map((card) => ({
           ...card,
-          columnTitle: col.title,
-        }))
-      );
-      setCards(allCards);
+          id: card.id || generateTempId(),
+        })),
+      }));
+      setColumns(boardWithIds);
     }
-
-    return () => controller.abort();
   }, [board]);
 
   if (isLoading) return <Text>Loading board...</Text>;
 
   const onReceiveDragDrop = (event: any, destinationColumnTitle: string) => {
     const draggedCardId = event.dragged.payload;
-    setCards((prev) =>
-      prev.map((card) =>
-        card.id === draggedCardId
-          ? { ...card, columnTitle: destinationColumnTitle }
-          : card
-      )
-    );
+
+    setColumns((prevColumns) => {
+      const newColumns: ColumnModel[] = JSON.parse(JSON.stringify(prevColumns));
+
+      let sourceColumnIndex = -1;
+      let draggedCardIndex = -1;
+
+      for (let i = 0; i < newColumns.length; i++) {
+        const cardIndex = newColumns[i].cards.findIndex(
+          (card) => card.id === draggedCardId
+        );
+        if (cardIndex !== -1) {
+          sourceColumnIndex = i;
+          draggedCardIndex = cardIndex;
+          break;
+        }
+      }
+
+      if (sourceColumnIndex === -1) {
+        return prevColumns;
+      }
+
+      const destinationColumnIndex = newColumns.findIndex(
+        (col) => col.title === destinationColumnTitle
+      );
+
+      if (
+        destinationColumnIndex === -1 ||
+        sourceColumnIndex === destinationColumnIndex
+      ) {
+        return prevColumns;
+      }
+
+      const [cardToMove] = newColumns[sourceColumnIndex].cards.splice(
+        draggedCardIndex,
+        1
+      );
+
+      if (cardToMove) {
+        newColumns[destinationColumnIndex].cards.push(cardToMove);
+      }
+
+      return newColumns;
+    });
   };
 
   const handleAddCard = async (
@@ -63,7 +97,21 @@ export const BoardScreen = () => {
 
     try {
       const newCard = await addCard({ title, description, columnTitle, team });
-      setCards((prev) => [...prev, { ...newCard, columnTitle }]);
+
+      if (!newCard.id) {
+        newCard.id = generateTempId();
+      }
+
+      setColumns((prev) => {
+        const newColumns = [...prev];
+        const columnIndex = newColumns.findIndex(
+          (col) => col.title === columnTitle
+        );
+        if (columnIndex > -1) {
+          newColumns[columnIndex].cards.push(newCard);
+        }
+        return newColumns;
+      });
     } catch (error) {
       console.error("Failed to add card: ", error);
     }
@@ -80,9 +128,9 @@ export const BoardScreen = () => {
         <View style={styles.board}>
           {columns
             .filter((col) => typeof col.title === "string")
-            .map((col) => (
+            .map((col, index) => (
               <DraxView
-                key={col.title as string}
+                key={`${col.title}-${index}`}
                 style={styles.column}
                 receivingStyle={styles.receiving}
                 onReceiveDragDrop={(event) =>
@@ -91,29 +139,27 @@ export const BoardScreen = () => {
                 testID={`column-${col.title}`}
               >
                 <Text style={styles.columnTitle}>{col.title}</Text>
-                {cards
-                  .filter((card) => card.columnTitle === col.title)
-                  .map((card) => (
-                    <DraxView
-                      key={card.id}
-                      style={styles.card}
-                      draggingStyle={styles.dragging}
-                      hoverDraggingStyle={styles.hoverDragging}
-                      dragReleasedStyle={styles.dragging}
-                      dragPayload={card.id}
-                      longPressDelay={150}
-                      receptive={false} // Important so card itself doesn't act like a drop target
-                      draggable
-                    >
-                      <Text>{card.title}</Text>
-                      {card.description && <Text>{card.description}</Text>}
-                      {card.assignee && <Text>Assignee: {card.assignee}</Text>}
-                      {card.storyPoints && (
-                        <Text>Story Points: {card.storyPoints}</Text>
-                      )}
-                      {card.priority && <Text>Priority: {card.priority}</Text>}
-                    </DraxView>
-                  ))}
+                {col.cards.map((card, cardIndex) => (
+                  <DraxView
+                    key={card.id || `card-${cardIndex}`}
+                    style={styles.card}
+                    draggingStyle={styles.dragging}
+                    hoverDraggingStyle={styles.hoverDragging}
+                    dragReleasedStyle={styles.dragging}
+                    dragPayload={card.id}
+                    longPressDelay={150}
+                    receptive={false}
+                    draggable
+                  >
+                    <Text>{card.title}</Text>
+                    {card.description && <Text>{card.description}</Text>}
+                    {card.assignee && <Text>Assignee: {card.assignee}</Text>}
+                    {card.storyPoints && (
+                      <Text>Story Points: {card.storyPoints}</Text>
+                    )}
+                    {card.priority && <Text>Priority: {card.priority}</Text>}
+                  </DraxView>
+                ))}
               </DraxView>
             ))}
         </View>
