@@ -12,21 +12,22 @@ import { useAuth } from "@/store/authStore";
 import { AddCardModal } from "./AddCardModal";
 import { ColumnModel } from "../models/board";
 import { addCard, getColumns } from "@/services/card";
+import { useCreateBoard } from "../hooks/useBoard";
 
 export const NavigationBar: React.FC<{
   columns: ColumnModel[];
   onSubmitCard: (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => Promise<void>;
 }> = ({ onSubmitCard }) => {
-
   const router = useRouter();
   const setToken = useAuth((state) => state.setToken);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [columns, setColumns] = useState<string[]>([]);
+  const { mutate: createBoard, isLoading } = useCreateBoard();
 
   const handleHomePress = () => {
     router.push("/board");
@@ -49,7 +50,7 @@ export const NavigationBar: React.FC<{
   const handleSubmitCard = async (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
     if (!team) {
@@ -91,7 +92,10 @@ export const NavigationBar: React.FC<{
 
           {/* Right Section with Extra Buttons */}
           <View style={styles.rightButton}>
-            <TouchableOpacity style={styles.extraButton}>
+            <TouchableOpacity
+              style={styles.extraButton}
+              onPress={() => createBoard()}
+            >
               <Text style={styles.extraButtonText}>Create Board</Text>
             </TouchableOpacity>
 

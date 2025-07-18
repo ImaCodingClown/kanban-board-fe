@@ -1,8 +1,8 @@
 import { DraxProvider, DraxView } from "react-native-drax";
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
-import { useBoard } from "../hooks/useBoard";
-import { CardModel, ColumnModel } from "../models/board";
+import { useBoard, useUpdateBoard } from "../hooks/useBoard";
+import { BoardModel, CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
 import { addCard } from "@/services/card";
 import { useAuth } from "@/store/authStore";
@@ -11,26 +11,17 @@ const { width } = Dimensions.get("window");
 
 export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
-  const [cards, setCards] = useState<(CardModel & { columnTitle: string })[]>(
-    []
-  );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const updateBoardMutation = useUpdateBoard();
 
-  const board: ColumnModel[] | undefined = data;
+  const board: BoardModel | undefined = data;
 
   React.useEffect(() => {
     const controller = new AbortController();
 
     if (board) {
-      setColumns(board);
-      const allCards = board.flatMap((col: ColumnModel) =>
-        col.cards.map((card: CardModel) => ({
-          ...card,
-          columnTitle: col.title,
-        }))
-      );
-      setCards(allCards);
+      setColumns(board.columns);
     }
 
     return () => controller.abort();
@@ -39,20 +30,39 @@ export const BoardScreen = () => {
   if (isLoading) return <Text>Loading board...</Text>;
 
   const onReceiveDragDrop = (event: any, destinationColumnTitle: string) => {
-    const draggedCardId = event.dragged.payload;
-    setCards((prev) =>
-      prev.map((card) =>
-        card.id === draggedCardId
-          ? { ...card, columnTitle: destinationColumnTitle }
-          : card
-      )
-    );
-  };
+    const draggedCard: CardModel = event.dragged.payload;
 
+    setColumns((prevColumns) => {
+      const newColumns = prevColumns.map((column) => ({
+        ...column,
+        cards: column.cards.filter((card) => card._id !== draggedCard._id),
+      }));
+
+      const updatedColumns = newColumns.map((column) => {
+        if (column.title === destinationColumnTitle) {
+          return {
+            ...column,
+            cards: [
+              ...column.cards,
+              { ...draggedCard, columnTitle: destinationColumnTitle },
+            ],
+          };
+        }
+        return column;
+      });
+
+      if (board) {
+        const updatedBoard = { ...board, columns: updatedColumns };
+        updateBoardMutation.mutate(updatedBoard);
+      }
+
+      return updatedColumns;
+    });
+  };
   const handleAddCard = async (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
 
@@ -62,8 +72,20 @@ export const BoardScreen = () => {
     }
 
     try {
-      const newCard = await addCard({ title, description, columnTitle, team });
-      setCards((prev) => [...prev, { ...newCard, columnTitle }]);
+      const new_card = await addCard({ title, description, columnTitle, team });
+      setColumns((prevColumns) => {
+        const newColumns = prevColumns.map((column) => {
+          if (column.title === columnTitle) {
+            return {
+              ...column,
+              cards: [...column.cards, new_card], // immutably add new_card
+            };
+          }
+          return column;
+        });
+
+        return newColumns;
+      });
     } catch (error) {
       console.error("Failed to add card: ", error);
     }
@@ -91,29 +113,27 @@ export const BoardScreen = () => {
                 testID={`column-${col.title}`}
               >
                 <Text style={styles.columnTitle}>{col.title}</Text>
-                {cards
-                  .filter((card) => card.columnTitle === col.title)
-                  .map((card) => (
-                    <DraxView
-                      key={card.id}
-                      style={styles.card}
-                      draggingStyle={styles.dragging}
-                      hoverDraggingStyle={styles.hoverDragging}
-                      dragReleasedStyle={styles.dragging}
-                      dragPayload={card.id}
-                      longPressDelay={150}
-                      receptive={false} // Important so card itself doesn't act like a drop target
-                      draggable
-                    >
-                      <Text>{card.title}</Text>
-                      {card.description && <Text>{card.description}</Text>}
-                      {card.assignee && <Text>Assignee: {card.assignee}</Text>}
-                      {card.storyPoints && (
-                        <Text>Story Points: {card.storyPoints}</Text>
-                      )}
-                      {card.priority && <Text>Priority: {card.priority}</Text>}
-                    </DraxView>
-                  ))}
+                {col.cards.map((card) => (
+                  <DraxView
+                    key={card._id}
+                    style={styles.card}
+                    draggingStyle={styles.dragging}
+                    hoverDraggingStyle={styles.hoverDragging}
+                    dragReleasedStyle={styles.dragging}
+                    dragPayload={card}
+                    longPressDelay={150}
+                    receptive={false} // Important so card itself doesn't act like a drop target
+                    draggable
+                  >
+                    <Text>{card.title}</Text>
+                    {card.description && <Text>{card.description}</Text>}
+                    {card.assignee && <Text>Assignee: {card.assignee}</Text>}
+                    {card.storyPoints && (
+                      <Text>Story Points: {card.storyPoints}</Text>
+                    )}
+                    {card.priority && <Text>Priority: {card.priority}</Text>}
+                  </DraxView>
+                ))}
               </DraxView>
             ))}
         </View>
