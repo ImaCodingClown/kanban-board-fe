@@ -38,7 +38,6 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
     if (visible) fetchColumns();
   }, [visible]);
 
-
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
