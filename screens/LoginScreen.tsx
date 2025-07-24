@@ -39,9 +39,6 @@ export const LoginScreen = () => {
         teams: [me.username],
       });
 
-      // TODO: Replace LJY Members
-      const team = "LJY Members";
-      await api.post("/board", { team: team });
       router.replace("/board");
     } catch (error: any) {
       console.error(error);
