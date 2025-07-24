@@ -15,7 +15,8 @@ export const useBoard = () => {
       }
 
       const response = await api.get<BoardModel>("/board", {
-        params: { team: user.teams[0] },
+        // TODO: Replace LJY Members
+        params: { team: "LJY Members" },
       });
       return response.data;
     },

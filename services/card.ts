@@ -15,13 +15,13 @@ export const addCard = async ({
     title,
     description,
     column_name: columnTitle,
-    team,
+    team: "LJY Members",
   });
 
   return response.data;
 };
 
 export const getColumns = async (team: string) => {
-  const response = await api.get(`/v1/columns?team=${team}`);
+  const response = await api.get(`/v1/columns?team=LJY Members`);
   return response.data;
 };
