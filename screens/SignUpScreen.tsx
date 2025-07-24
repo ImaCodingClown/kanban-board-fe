@@ -40,8 +40,9 @@ export const SignUpScreen = () => {
         email: me.email,
         teams: [me.username],
       });
-
-      await api.post("/board", { team: me.teams[0] });
+      // TODO: Replace LJY Members
+      const team = "LJY Members";
+      await api.post("/board", { team: team });
       router.replace("/board");
     } catch (err: any) {
       console.error(err);
