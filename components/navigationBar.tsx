@@ -19,7 +19,7 @@ export const NavigationBar: React.FC<{
   onSubmitCard: (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => Promise<void>;
 }> = ({ onSubmitCard }) => {
   const router = useRouter();
@@ -55,7 +55,7 @@ export const NavigationBar: React.FC<{
   const handleSubmitCard = async (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
     if (!team) {
