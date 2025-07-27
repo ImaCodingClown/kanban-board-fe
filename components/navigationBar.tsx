@@ -19,7 +19,7 @@ export const NavigationBar: React.FC<{
   onSubmitCard: (
     title: string,
     description: string,
-    columnTitle: string,
+    columnTitle: string
   ) => Promise<void>;
 }> = ({ onSubmitCard }) => {
   const router = useRouter();
@@ -31,6 +31,11 @@ export const NavigationBar: React.FC<{
 
   const handleHomePress = () => {
     router.push("/board");
+  };
+
+  const handleProfilePress = () => {
+    setShowProfileDropdown(false);
+    router.push("/profile");
   };
 
   const handleLogout = async () => {
@@ -50,7 +55,7 @@ export const NavigationBar: React.FC<{
   const handleSubmitCard = async (
     title: string,
     description: string,
-    columnTitle: string,
+    columnTitle: string
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
     if (!team) {
@@ -125,9 +130,7 @@ export const NavigationBar: React.FC<{
                 <View style={styles.dropdown}>
                   <TouchableOpacity
                     style={styles.dropdownItem}
-                    onPress={() => {
-                      setShowProfileDropdown(false);
-                    }}
+                    onPress={handleProfilePress}
                   >
                     <Ionicons name="person" size={20} color="#333" />
                     <Text style={styles.dropdownText}>Profile</Text>
