@@ -1,4 +1,5 @@
 import { api } from "./api";
+import axios from "axios";
 
 export const addCard = async ({
   title,
@@ -23,5 +24,22 @@ export const addCard = async ({
 
 export const getColumns = async (team: string) => {
   const response = await api.get(`/v1/columns?team=LJY Members`);
+  return response.data;
+};
+
+export const deleteCard = async ({
+  cardId,
+  columnName,
+  team,
+}: {
+  cardId: string;
+  columnName: string;
+  team: string;
+}) => {
+  const response = await api.post("/v1/card/delete", {
+    card_id: cardId,
+    column_name: columnName,
+    team,
+  });
   return response.data;
 };

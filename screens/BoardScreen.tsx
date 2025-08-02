@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { useBoard, useUpdateBoard } from "../hooks/useBoard";
 import { BoardModel, CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
-import { addCard } from "@/services/card";
+import { addCard, deleteCard } from "@/services/card";
 import { useAuth } from "@/store/authStore";
 
 const { width } = Dimensions.get("window");
@@ -14,6 +14,7 @@ export const BoardScreen = () => {
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
   const updateBoardMutation = useUpdateBoard();
+  const [hovered, setHovered] = useState(false);
 
   const board: BoardModel | undefined = data;
 
@@ -59,6 +60,7 @@ export const BoardScreen = () => {
       return updatedColumns;
     });
   };
+
   const handleAddCard = async (
     title: string,
     description: string,
@@ -88,6 +90,36 @@ export const BoardScreen = () => {
       });
     } catch (error) {
       console.error("Failed to add card: ", error);
+    }
+  };
+
+  const handleDeleteCard = async (cardId: string, columnTitle: string) => {
+    const team = useAuth.getState().user?.teams?.[0];
+
+    if (!team) {
+      console.error("No team found for the user.");
+      return;
+    }
+
+    try {
+      await deleteCard({
+        cardId,
+        columnName: columnTitle,
+        team,
+      });
+      setColumns((prevColumns) =>
+        prevColumns.map((column) => {
+          if (column.title === columnTitle) {
+            return {
+              ...column,
+              cards: column.cards.filter((card) => card._id !== cardId),
+            };
+          }
+          return column;
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to delete card:", error);
     }
   };
 
@@ -125,6 +157,14 @@ export const BoardScreen = () => {
                     receptive={false} // Important so card itself doesn't act like a drop target
                     draggable
                   >
+                    <Text
+                      style={styles.deleteButton}
+                      onPress={() =>
+                        handleDeleteCard(card._id!, col.title.toString())
+                      }
+                    >
+                      ❌
+                    </Text>
                     <Text>{card.title}</Text>
                     {card.description && <Text>{card.description}</Text>}
                     {card.assignee && <Text>Assignee: {card.assignee}</Text>}
@@ -192,5 +232,13 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: 10,
+  },
+  deleteButton: {
+    position: "absolute",
+    top: 4,
+    right: 6,
+    fontSize: 16,
+    color: "red",
+    zIndex: 1,
   },
 });
