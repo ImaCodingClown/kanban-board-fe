@@ -4,8 +4,9 @@ import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { useBoard, useUpdateBoard } from "../hooks/useBoard";
 import { BoardModel, CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
-import { addCard, deleteCard } from "@/services/card";
+import { addCard, deleteCard, editCard } from "@/services/card";
 import { useAuth } from "@/store/authStore";
+import { EditCardModal } from "@/components/EditCardModal";
 
 const { width } = Dimensions.get("window");
 
@@ -14,7 +15,10 @@ export const BoardScreen = () => {
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
   const updateBoardMutation = useUpdateBoard();
-  const [hovered, setHovered] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingCard, setEditingCard] = useState<
+    (CardModel & { columnTitle: string }) | null
+  >(null);
 
   const board: BoardModel | undefined = data;
 
@@ -123,6 +127,46 @@ export const BoardScreen = () => {
     }
   };
 
+  const handleEditCard = async (title: string, description: string) => {
+    if (!editingCard) return;
+
+    const team = useAuth.getState().user?.teams?.[0];
+    if (!team) return;
+
+    try {
+      await editCard({
+        cardId: editingCard._id!,
+        title: title,
+        description: description,
+        columnTitle: editingCard.columnTitle,
+        team,
+      });
+
+      setColumns((prevColumns) =>
+        prevColumns.map((col) => {
+          if (col.title !== editingCard.columnTitle) return col;
+
+          const updatedCards = col.cards.map((card) =>
+            card._id === editingCard._id
+              ? {
+                  ...card,
+                  title: title,
+                  description: description,
+                }
+              : card,
+          );
+
+          return { ...col, cards: updatedCards };
+        }),
+      );
+
+      setEditModalVisible(false);
+      setEditingCard(null);
+    } catch (error) {
+      console.error("Failed to update card", error);
+    }
+  };
+
   return (
     <DraxProvider>
       <View style={styles.screen}>
@@ -131,6 +175,14 @@ export const BoardScreen = () => {
           onClose={() => setShowModal(false)}
           onSubmit={handleAddCard}
         />
+        {editingCard && (
+          <EditCardModal
+            visible={editModalVisible}
+            onClose={() => setEditModalVisible(false)}
+            card={editingCard}
+            onSuccess={handleEditCard}
+          />
+        )}
         <View style={styles.board}>
           {columns
             .filter((col) => typeof col.title === "string")
@@ -164,6 +216,15 @@ export const BoardScreen = () => {
                       }
                     >
                       ❌
+                    </Text>
+                    <Text
+                      style={styles.editButton}
+                      onPress={() => {
+                        setEditingCard({ ...card, columnTitle: col.title });
+                        setEditModalVisible(true);
+                      }}
+                    >
+                      edit
                     </Text>
                     <Text>{card.title}</Text>
                     {card.description && <Text>{card.description}</Text>}
@@ -239,6 +300,14 @@ const styles = StyleSheet.create({
     right: 6,
     fontSize: 16,
     color: "red",
+    zIndex: 1,
+  },
+  editButton: {
+    position: "absolute",
+    bottom: 4,
+    right: 6,
+    fontSize: 16,
+    color: "grey",
     zIndex: 1,
   },
 });

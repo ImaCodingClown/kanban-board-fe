@@ -43,3 +43,27 @@ export const deleteCard = async ({
   });
   return response.data;
 };
+
+export const editCard = async ({
+  cardId,
+  title,
+  description,
+  columnTitle,
+  team,
+}: {
+  cardId: string;
+  title: string;
+  description: string;
+  columnTitle: string;
+  team: string;
+}) => {
+  const response = await api.post("/v1/card/edit", {
+    card_id: cardId,
+    title,
+    description,
+    column_name: columnTitle,
+    team,
+  });
+
+  return response.data;
+};
