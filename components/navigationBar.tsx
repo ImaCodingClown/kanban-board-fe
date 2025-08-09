@@ -14,14 +14,7 @@ import { ColumnModel } from "../models/board";
 import { addCard, getColumns } from "@/services/card";
 import { useCreateBoard } from "../hooks/useBoard";
 
-export const NavigationBar: React.FC<{
-  columns: ColumnModel[];
-  onSubmitCard: (
-    title: string,
-    description: string,
-    columnTitle: string,
-  ) => Promise<void>;
-}> = ({ onSubmitCard }) => {
+export const NavigationBar = () => {
   const router = useRouter();
   const setToken = useAuth((state) => state.setToken);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
