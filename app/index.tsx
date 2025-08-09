@@ -20,7 +20,7 @@ export default function Index() {
     if (!isReady) return;
 
     if (token) {
-      router.replace("/signup");
+      router.replace("/board");
     } else {
       router.replace("/login");
     }
