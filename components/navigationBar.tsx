@@ -20,6 +20,7 @@ export const NavigationBar: React.FC<{
     title: string,
     description: string,
     columnTitle: string,
+    storyPoint: number,
   ) => Promise<void>;
 }> = ({ onSubmitCard }) => {
   const router = useRouter();
@@ -51,6 +52,7 @@ export const NavigationBar: React.FC<{
     title: string,
     description: string,
     columnTitle: string,
+    storyPoint: number,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
     if (!team) {
@@ -59,7 +61,7 @@ export const NavigationBar: React.FC<{
     }
 
     try {
-      await addCard({ title, description, columnTitle, team });
+      await addCard({ title, description, columnTitle, storyPoint, team });
     } catch (e) {
       console.error("Adding card failed: ", e);
     }

@@ -1,21 +1,23 @@
 import { api } from "./api";
-import axios from "axios";
 
 export const addCard = async ({
   title,
   description,
   columnTitle,
+  storyPoint,
   team,
 }: {
   title: string;
   description?: string;
   columnTitle: string;
+  storyPoint: number;
   team: string;
 }) => {
   const response = await api.post("/v1/card", {
     title,
     description,
     column_name: columnTitle,
+    story_point: storyPoint,
     team: "LJY Members",
   });
 
@@ -49,12 +51,14 @@ export const editCard = async ({
   title,
   description,
   columnTitle,
+  storyPoint,
   team,
 }: {
   cardId: string;
   title: string;
   description: string;
   columnTitle: string;
+  storyPoint: number;
   team: string;
 }) => {
   const response = await api.post("/v1/card/edit", {
@@ -62,6 +66,7 @@ export const editCard = async ({
     title,
     description,
     column_name: columnTitle,
+    story_point: storyPoint,
     team,
   });
 
