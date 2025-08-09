@@ -7,7 +7,7 @@
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web",
+    "web": "expo start --web --port 8081",
     "test": "jest --watchAll",
     "test:ci": "CI=true jest --ci --coverage --maxWorkers=1 --maxConcurrent=1",
     "test:local": "jest --ci --coverage",
