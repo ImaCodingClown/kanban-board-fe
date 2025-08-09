@@ -22,7 +22,6 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
   useEffect(() => {
     if (card) {
       setTitle(card.title);
-      setDescription(card.description ?? "");
       setStoryPoint(card.story_point ?? 0);
     }
   }, [card]);
