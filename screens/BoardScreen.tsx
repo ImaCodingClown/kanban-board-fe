@@ -141,8 +141,6 @@ export const BoardScreen = () => {
     description: string,
     storyPoint: number,
   ) => {
-    
-  const handleEditCard = async (title: string, description: string) => {
     if (!editingCard) return;
 
     const team = useAuth.getState().user?.teams?.[0];
