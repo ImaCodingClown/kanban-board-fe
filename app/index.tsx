@@ -16,6 +16,7 @@ export default function Index() {
     return () => clearTimeout(timeout);
   }, []);
 
+  router.replace("/login");
   useEffect(() => {
     if (!isReady) return;
 

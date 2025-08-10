@@ -37,14 +37,14 @@ const mockBoardData: ColumnModel[] = [
   {
     title: "To Do",
     cards: [
-      { id: "card-1", title: "Task 1", description: "Description for task 1" },
-      { id: "card-2", title: "Task 2", description: "Description for task 2" },
+      { _id: "card-1", title: "Task 1", description: "Description for task 1" },
+      { _id: "card-2", title: "Task 2", description: "Description for task 2" },
     ],
   },
   {
     title: "In Progress",
     cards: [
-      { id: "card-3", title: "Task 3", description: "Description for task 3" },
+      { _id: "card-3", title: "Task 3", description: "Description for task 3" },
     ],
   },
   {
