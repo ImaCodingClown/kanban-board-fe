@@ -4,7 +4,7 @@ export interface CardModel {
   title: string;
   description?: string;
   assignee?: string;
-  storyPoints?: number;
+  story_point?: number;
   priority?: string;
 }
 

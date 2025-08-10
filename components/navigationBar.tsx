@@ -14,7 +14,15 @@ import { ColumnModel } from "../models/board";
 import { addCard, getColumns } from "@/services/card";
 import { useCreateBoard } from "../hooks/useBoard";
 
-export const NavigationBar = () => {
+export const NavigationBar: React.FC<{
+  columns: ColumnModel[];
+  onSubmitCard: (
+    title: string,
+    description: string,
+    columnTitle: string,
+    storyPoint: number,
+  ) => Promise<void>;
+}> = ({ onSubmitCard }) => {
   const router = useRouter();
   const setToken = useAuth((state) => state.setToken);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -49,6 +57,7 @@ export const NavigationBar = () => {
     title: string,
     description: string,
     columnTitle: string,
+    storyPoint: number,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
     if (!team) {
@@ -57,7 +66,7 @@ export const NavigationBar = () => {
     }
 
     try {
-      await addCard({ title, description, columnTitle, team });
+      await addCard({ title, description, columnTitle, storyPoint, team });
     } catch (e) {
       console.error("Adding card failed: ", e);
     }

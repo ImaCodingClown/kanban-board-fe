@@ -69,6 +69,7 @@ export const BoardScreen = () => {
     title: string,
     description: string,
     columnTitle: string,
+    storyPoint: number,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
 
@@ -77,8 +78,16 @@ export const BoardScreen = () => {
       return;
     }
 
+    console.log("handleAddCard hit");
+
     try {
-      const new_card = await addCard({ title, description, columnTitle, team });
+      const new_card = await addCard({
+        title,
+        description,
+        columnTitle,
+        storyPoint,
+        team,
+      });
       setColumns((prevColumns) => {
         const newColumns = prevColumns.map((column) => {
           if (column.title === columnTitle) {
@@ -127,6 +136,12 @@ export const BoardScreen = () => {
     }
   };
 
+  const handleEditCard = async (
+    title: string,
+    description: string,
+    storyPoint: number,
+  ) => {
+    
   const handleEditCard = async (title: string, description: string) => {
     if (!editingCard) return;
 
@@ -139,6 +154,7 @@ export const BoardScreen = () => {
         title: title,
         description: description,
         columnTitle: editingCard.columnTitle,
+        storyPoint: storyPoint,
         team,
       });
 
@@ -229,8 +245,12 @@ export const BoardScreen = () => {
                     <Text>{card.title}</Text>
                     {card.description && <Text>{card.description}</Text>}
                     {card.assignee && <Text>Assignee: {card.assignee}</Text>}
-                    {card.storyPoints && (
-                      <Text>Story Points: {card.storyPoints}</Text>
+                    {card.story_point !== undefined && card.story_point > 0 && (
+                      <Text>
+                        <Text style={styles.storyPoint}>
+                          Story Point: {card.story_point}
+                        </Text>
+                      </Text>
                     )}
                     {card.priority && <Text>Priority: {card.priority}</Text>}
                   </DraxView>
@@ -309,5 +329,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "grey",
     zIndex: 1,
+  },
+  storyPoint: {
+    fontWeight: "bold",
+    fontSize: 11,
   },
 });

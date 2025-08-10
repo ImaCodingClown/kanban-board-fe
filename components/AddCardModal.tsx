@@ -8,7 +8,12 @@ import { getColumns } from "@/services/card";
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (title: string, description: string, columeTitle: string) => void;
+  onSubmit: (
+    title: string,
+    description: string,
+    columeTitle: string,
+    storyPoint: number,
+  ) => void;
 };
 
 export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
@@ -16,6 +21,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const [description, setDescription] = useState("");
   const [columnTitle, setColumnTitle] = useState("");
   const [columns, setColumns] = useState<string[]>([]);
+  const [storyPoint, setStoryPoint] = useState<number>(0);
 
   const team = useAuth.getState().user?.teams?.[0];
 
@@ -41,10 +47,15 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
+    // safety, ensure storypoint is a number
+    const storyPointNumber =
+      typeof storyPoint === "string" ? parseInt(storyPoint, 10) : storyPoint;
+
     try {
-      onSubmit(title, description, columnTitle);
+      onSubmit(title, description, columnTitle, storyPoint);
       setTitle("");
       setDescription("");
+      setStoryPoint(0);
       onClose();
     } catch (error) {
       console.error("Error adding card:", error);
@@ -80,6 +91,21 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
               <Picker.Item key={col} label={col} value={col} />
             ))}
           </Picker>
+
+          <Text style={{ marginTop: 10 }}>Story Point:</Text>
+          <Picker
+            selectedValue={storyPoint}
+            onValueChange={(value) => {
+              const numValue =
+                typeof value === "string" ? parseInt(value, 10) : value;
+              setStoryPoint(numValue);
+            }}
+            style={styles.picker}
+          >
+            {[...Array(10).keys()].map((num) => (
+              <Picker.Item key={num} label={num.toString()} value={num} />
+            ))}
+          </Picker>
           <Button title="Submit" onPress={handleSubmit} />
           <Button title="Cancel" onPress={onClose} />
         </View>
@@ -103,7 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   picker: {
-    marginVertical: 13,
+    marginVertical: 10,
     backgroundColor: "#f2f2f2",
   },
 });
