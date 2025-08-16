@@ -25,7 +25,9 @@ export const addCard = async ({
 };
 
 export const getColumns = async (team: string) => {
-  const response = await api.get(`/v1/columns?team=${encodeURIComponent(team)}`);
+  const response = await api.get(
+    `/v1/columns?team=${encodeURIComponent(team)}`,
+  );
   return response.data;
 };
 

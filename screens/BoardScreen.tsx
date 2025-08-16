@@ -42,7 +42,9 @@ export const BoardScreen = () => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>No team selected</Text>
-        <Text style={styles.infoText}>Please select a team from the navigation bar</Text>
+        <Text style={styles.infoText}>
+          Please select a team from the navigation bar
+        </Text>
       </View>
     );
   }
@@ -50,7 +52,9 @@ export const BoardScreen = () => {
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.loadingText}>Loading board for team: {selectedTeam}</Text>
+        <Text style={styles.loadingText}>
+          Loading board for team: {selectedTeam}
+        </Text>
       </View>
     );
   }
@@ -67,7 +71,9 @@ export const BoardScreen = () => {
   if (!board || !columns.length) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>No board found for team: {selectedTeam}</Text>
+        <Text style={styles.errorText}>
+          No board found for team: {selectedTeam}
+        </Text>
         <Text style={styles.infoText}>Try creating a new board</Text>
       </View>
     );
@@ -218,7 +224,7 @@ export const BoardScreen = () => {
         <View style={styles.header}>
           <Text style={styles.teamTitle}>Team: {selectedTeam}</Text>
         </View>
-        
+
         <AddCardModal
           visible={showModal}
           onClose={() => setShowModal(false)}
@@ -277,7 +283,9 @@ export const BoardScreen = () => {
                     </Text>
                     <Text style={styles.cardTitle}>{card.title}</Text>
                     {card.description && (
-                      <Text style={styles.cardDescription}>{card.description}</Text>
+                      <Text style={styles.cardDescription}>
+                        {card.description}
+                      </Text>
                     )}
                     {card.assignee && <Text>Assignee: {card.assignee}</Text>}
                     {card.story_point !== undefined && card.story_point > 0 && (
