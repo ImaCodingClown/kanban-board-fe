@@ -5,27 +5,26 @@ import { useAuth } from "@/store/authStore";
 export default function Index() {
   const router = useRouter();
   const token = useAuth((state) => state.token);
+  const user = useAuth((state) => state.user);
   const [isReady, setIsReady] = useState(false);
 
-  // Defer routing to allow _layout.tsx to mount first
   useEffect(() => {
     const timeout = setTimeout(() => {
       setIsReady(true);
-    }, 0); // wait until next render cycle
+    }, 100);
 
     return () => clearTimeout(timeout);
   }, []);
 
-  router.replace("/login");
   useEffect(() => {
     if (!isReady) return;
 
-    if (token) {
-      router.replace("/signup");
+    if (token && user) {
+      router.replace("/board");
     } else {
       router.replace("/login");
     }
-  }, [isReady, token]);
+  }, [isReady, token, user, router]);
 
   return null;
 }

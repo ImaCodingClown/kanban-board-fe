@@ -10,25 +10,18 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
 import { AddCardModal } from "./AddCardModal";
-import { ColumnModel } from "../models/board";
+import { TeamSelector } from "./teamSelector";
 import { addCard, getColumns } from "@/services/card";
 import { useCreateBoard } from "../hooks/useBoard";
 
-export const NavigationBar: React.FC<{
-  columns: ColumnModel[];
-  onSubmitCard: (
-    title: string,
-    description: string,
-    columnTitle: string,
-    storyPoint: number,
-  ) => Promise<void>;
-}> = ({ onSubmitCard }) => {
+export const NavigationBar: React.FC = () => {
   const router = useRouter();
   const setToken = useAuth((state) => state.setToken);
+  const selectedTeam = useAuth((state) => state.selectedTeam);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [columns, setColumns] = useState<string[]>([]);
-  const { mutate: createBoard, isLoading } = useCreateBoard();
+  const { mutate: createBoard } = useCreateBoard();
 
   const handleHomePress = () => {
     router.push("/board");
@@ -41,7 +34,13 @@ export const NavigationBar: React.FC<{
 
   const handleLogout = async () => {
     try {
+      const setToken = useAuth.getState().setToken;
+      const setUser = useAuth.getState().setUser;
+      const setSelectedTeam = useAuth.getState().setSelectedTeam;
+      
       setToken(null);
+      setUser(null);
+      setSelectedTeam(undefined);
       setShowProfileDropdown(false);
       router.replace("/login");
     } catch (error) {
@@ -59,28 +58,26 @@ export const NavigationBar: React.FC<{
     columnTitle: string,
     storyPoint: number,
   ) => {
-    const team = useAuth.getState().user?.teams?.[0];
-    if (!team) {
-      console.error("No team for the user.");
+    if (!selectedTeam) {
+      console.error("No team selected.");
       return;
     }
 
     try {
-      await addCard({ title, description, columnTitle, storyPoint, team });
+      await addCard({ title, description, columnTitle, storyPoint, team: selectedTeam });
     } catch (e) {
       console.error("Adding card failed: ", e);
     }
   };
 
   const handleOpenModal = async () => {
-    const team = useAuth.getState().user?.teams?.[0];
-    if (!team) {
-      console.error("No team for the user.");
+    if (!selectedTeam) {
+      console.error("No team selected.");
       return;
     }
 
     try {
-      const columnTitles = await getColumns(team);
+      const columnTitles = await getColumns(selectedTeam);
       setColumns(columnTitles);
       setModalVisible(true);
     } catch (e) {
@@ -88,32 +85,45 @@ export const NavigationBar: React.FC<{
     }
   };
 
+  const handleCreateBoard = () => {
+    if (!selectedTeam) {
+      console.error("No team selected.");
+      return;
+    }
+    createBoard();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.navbar}>
         <View style={styles.navContent}>
-          {/* Home Button */}
           <TouchableOpacity style={styles.homeButton} onPress={handleHomePress}>
             <Text style={styles.homeText}>LJY</Text>
           </TouchableOpacity>
 
-          {/* Right Section with Extra Buttons */}
+          <TeamSelector />
+
           <View style={styles.rightButton}>
             <TouchableOpacity
               style={styles.extraButton}
-              onPress={() => createBoard()}
+              onPress={handleCreateBoard}
+              disabled={!selectedTeam}
             >
-              <Text style={styles.extraButtonText}>Create Board</Text>
+              <Text style={[styles.extraButtonText, !selectedTeam && styles.disabledText]}>
+                Create Board
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.extraButton}
-              onPress={() => setModalVisible(true)}
+              onPress={handleOpenModal}
+              disabled={!selectedTeam}
             >
-              <Text style={styles.extraButtonText}>Add Card</Text>
+              <Text style={[styles.extraButtonText, !selectedTeam && styles.disabledText]}>
+                Add Card
+              </Text>
             </TouchableOpacity>
 
-            {/* User Profile Section */}
             <View style={styles.profileSection}>
               <TouchableOpacity
                 style={styles.profileButton}
@@ -127,7 +137,6 @@ export const NavigationBar: React.FC<{
                 />
               </TouchableOpacity>
 
-              {/* Dropdown Menu */}
               {showProfileDropdown && (
                 <View style={styles.dropdown}>
                   <TouchableOpacity
@@ -197,7 +206,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F8FF",
   },
   homeText: {
-    //marginLeft: 8,
     fontSize: 20,
     color: "#007AFF",
     fontWeight: "600",
@@ -249,7 +257,6 @@ const styles = StyleSheet.create({
   logoutText: {
     color: "#FF3B30",
   },
-
   rightButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -262,8 +269,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F8FF",
   },
   extraButtonText: {
-    fontSize: 20,
+    fontSize: 16,
     color: "#007AFF",
     fontWeight: "600",
+  },
+  disabledText: {
+    color: "#999",
   },
 });

@@ -11,7 +11,9 @@ import { EditCardModal } from "@/components/EditCardModal";
 const { width } = Dimensions.get("window");
 
 export const BoardScreen = () => {
-  const { data, isLoading } = useBoard();
+  const { data, isLoading, error } = useBoard();
+  const selectedTeam = useAuth((state) => state.selectedTeam);
+  const user = useAuth((state) => state.user);
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
   const updateBoardMutation = useUpdateBoard();
@@ -23,16 +25,53 @@ export const BoardScreen = () => {
   const board: BoardModel | undefined = data;
 
   React.useEffect(() => {
-    const controller = new AbortController();
-
     if (board) {
       setColumns(board.columns);
     }
-
-    return () => controller.abort();
   }, [board]);
 
-  if (isLoading) return <Text>Loading board...</Text>;
+  if (!user) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>User not authenticated</Text>
+      </View>
+    );
+  }
+
+  if (!selectedTeam) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>No team selected</Text>
+        <Text style={styles.infoText}>Please select a team from the navigation bar</Text>
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.loadingText}>Loading board for team: {selectedTeam}</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Error loading board</Text>
+        <Text style={styles.infoText}>{error.message}</Text>
+      </View>
+    );
+  }
+
+  if (!board || !columns.length) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>No board found for team: {selectedTeam}</Text>
+        <Text style={styles.infoText}>Try creating a new board</Text>
+      </View>
+    );
+  }
 
   const onReceiveDragDrop = (event: any, destinationColumnTitle: string) => {
     const draggedCard: CardModel = event.dragged.payload;
@@ -71,14 +110,10 @@ export const BoardScreen = () => {
     columnTitle: string,
     storyPoint: number,
   ) => {
-    const team = useAuth.getState().user?.teams?.[0];
-
-    if (!team) {
-      console.error("No team found for the user.");
+    if (!selectedTeam) {
+      console.error("No team selected.");
       return;
     }
-
-    console.log("handleAddCard hit");
 
     try {
       const new_card = await addCard({
@@ -86,14 +121,14 @@ export const BoardScreen = () => {
         description,
         columnTitle,
         storyPoint,
-        team,
+        team: selectedTeam,
       });
       setColumns((prevColumns) => {
         const newColumns = prevColumns.map((column) => {
           if (column.title === columnTitle) {
             return {
               ...column,
-              cards: [...column.cards, new_card], // immutably add new_card
+              cards: [...column.cards, new_card],
             };
           }
           return column;
@@ -107,10 +142,8 @@ export const BoardScreen = () => {
   };
 
   const handleDeleteCard = async (cardId: string, columnTitle: string) => {
-    const team = useAuth.getState().user?.teams?.[0];
-
-    if (!team) {
-      console.error("No team found for the user.");
+    if (!selectedTeam) {
+      console.error("No team selected.");
       return;
     }
 
@@ -118,7 +151,7 @@ export const BoardScreen = () => {
       await deleteCard({
         cardId,
         columnName: columnTitle,
-        team,
+        team: selectedTeam,
       });
       setColumns((prevColumns) =>
         prevColumns.map((column) => {
@@ -141,10 +174,7 @@ export const BoardScreen = () => {
     description: string,
     storyPoint: number,
   ) => {
-    if (!editingCard) return;
-
-    const team = useAuth.getState().user?.teams?.[0];
-    if (!team) return;
+    if (!editingCard || !selectedTeam) return;
 
     try {
       await editCard({
@@ -153,7 +183,7 @@ export const BoardScreen = () => {
         description: description,
         columnTitle: editingCard.columnTitle,
         storyPoint: storyPoint,
-        team,
+        team: selectedTeam,
       });
 
       setColumns((prevColumns) =>
@@ -166,6 +196,7 @@ export const BoardScreen = () => {
                   ...card,
                   title: title,
                   description: description,
+                  story_point: storyPoint,
                 }
               : card,
           );
@@ -184,6 +215,10 @@ export const BoardScreen = () => {
   return (
     <DraxProvider>
       <View style={styles.screen}>
+        <View style={styles.header}>
+          <Text style={styles.teamTitle}>Team: {selectedTeam}</Text>
+        </View>
+        
         <AddCardModal
           visible={showModal}
           onClose={() => setShowModal(false)}
@@ -220,7 +255,7 @@ export const BoardScreen = () => {
                     dragReleasedStyle={styles.dragging}
                     dragPayload={card}
                     longPressDelay={150}
-                    receptive={false} // Important so card itself doesn't act like a drop target
+                    receptive={false}
                     draggable
                   >
                     <Text
@@ -240,14 +275,14 @@ export const BoardScreen = () => {
                     >
                       edit
                     </Text>
-                    <Text>{card.title}</Text>
-                    {card.description && <Text>{card.description}</Text>}
+                    <Text style={styles.cardTitle}>{card.title}</Text>
+                    {card.description && (
+                      <Text style={styles.cardDescription}>{card.description}</Text>
+                    )}
                     {card.assignee && <Text>Assignee: {card.assignee}</Text>}
                     {card.story_point !== undefined && card.story_point > 0 && (
-                      <Text>
-                        <Text style={styles.storyPoint}>
-                          Story Point: {card.story_point}
-                        </Text>
+                      <Text style={styles.storyPoint}>
+                        Story Point: {card.story_point}
                       </Text>
                     )}
                     {card.priority && <Text>Priority: {card.priority}</Text>}
@@ -262,10 +297,48 @@ export const BoardScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    padding: 10,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  header: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+    marginBottom: 10,
+  },
+  teamTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "#666",
+    textAlign: "center",
+  },
+  errorText: {
+    fontSize: 18,
+    color: "#d32f2f",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 8,
+  },
   board: {
     flex: 1,
     flexDirection: "row",
-    padding: 10,
     overflow: "visible",
   },
   column: {
@@ -291,6 +364,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 5,
     marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  cardDescription: {
+    color: "#666",
+    fontSize: 14,
+    marginBottom: 4,
   },
   dragging: {
     opacity: 0.2,
@@ -308,10 +395,6 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
   },
-  screen: {
-    flex: 1,
-    padding: 10,
-  },
   deleteButton: {
     position: "absolute",
     top: 4,
@@ -324,12 +407,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 4,
     right: 6,
-    fontSize: 16,
+    fontSize: 12,
     color: "grey",
     zIndex: 1,
   },
   storyPoint: {
     fontWeight: "bold",
     fontSize: 11,
+    color: "#007AFF",
   },
 });
