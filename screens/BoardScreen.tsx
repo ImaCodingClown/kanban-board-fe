@@ -1,12 +1,13 @@
 import { DraxProvider, DraxView } from "react-native-drax";
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Alert } from "react-native";
 import { useBoard, useUpdateBoard } from "../hooks/useBoard";
 import { BoardModel, CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
 import { addCard, deleteCard, editCard } from "@/services/card";
 import { useAuth } from "@/store/authStore";
 import { EditCardModal } from "@/components/EditCardModal";
+import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 
 const { width } = Dimensions.get("window");
 
@@ -19,6 +20,12 @@ export const BoardScreen = () => {
   const [editingCard, setEditingCard] = useState<
     (CardModel & { columnTitle: string }) | null
   >(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<{
+    id: string;
+    columnTitle: string;
+    title: string;
+  } | null>(null);
 
   const board: BoardModel | undefined = data;
 
@@ -103,6 +110,22 @@ export const BoardScreen = () => {
       });
     } catch (error) {
       console.error("Failed to add card: ", error);
+    }
+  };
+
+  const confirmDeleteCard = (
+    cardId: string,
+    columnTitle: string,
+    cardTitle: string,
+  ) => {
+    setCardToDelete({ id: cardId, columnTitle, title: cardTitle });
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (cardToDelete) {
+      handleDeleteCard(cardToDelete.id, cardToDelete.columnTitle);
+      setCardToDelete(null);
     }
   };
 
@@ -197,6 +220,15 @@ export const BoardScreen = () => {
             onSuccess={handleEditCard}
           />
         )}
+        <ConfirmDeleteModal
+          visible={deleteModalVisible}
+          onClose={() => {
+            setDeleteModalVisible(false);
+            setCardToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          message={`Are you sure you want to delete "${cardToDelete?.title}"?`}
+        />
         <View style={styles.board}>
           {columns
             .filter((col) => typeof col.title === "string")
@@ -226,7 +258,11 @@ export const BoardScreen = () => {
                     <Text
                       style={styles.deleteButton}
                       onPress={() =>
-                        handleDeleteCard(card._id!, col.title.toString())
+                        confirmDeleteCard(
+                          card._id!,
+                          col.title.toString(),
+                          card.title,
+                        )
                       }
                     >
                       ❌
