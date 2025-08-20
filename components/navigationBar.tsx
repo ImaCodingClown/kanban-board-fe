@@ -21,6 +21,11 @@ export const NavigationBar: React.FC = () => {
     router.push("/board");
   };
 
+  const handleProfilePress = () => {
+    setShowProfileDropdown(false);
+    router.push("/profile");
+  };
+
   const handleLogout = async () => {
     try {
       setToken(null);
@@ -72,9 +77,7 @@ export const NavigationBar: React.FC = () => {
                 <View style={styles.dropdown}>
                   <TouchableOpacity
                     style={styles.dropdownItem}
-                    onPress={() => {
-                      setShowProfileDropdown(false);
-                    }}
+                    onPress={handleProfilePress}
                   >
                     <Ionicons name="person" size={20} color="#333" />
                     <Text style={styles.dropdownText}>Profile</Text>

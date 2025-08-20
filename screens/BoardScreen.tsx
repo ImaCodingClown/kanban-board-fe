@@ -241,6 +241,14 @@ export const BoardScreen = () => {
           onConfirm={handleConfirmDelete}
           message={`Are you sure you want to delete "${cardToDelete?.title}"?`}
         />
+        {editingCard && (
+          <EditCardModal
+            visible={editModalVisible}
+            onClose={() => setEditModalVisible(false)}
+            card={editingCard}
+            onSuccess={handleEditCard}
+          />
+        )}
         <View style={styles.board}>
           {columns
             .filter((col) => typeof col.title === "string")
