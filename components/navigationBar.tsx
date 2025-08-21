@@ -128,24 +128,6 @@ export const NavigationBar: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
-            {/* <TouchableOpacity
-              style={[
-                styles.extraButton,
-                !selectedTeam && styles.disabledButton,
-              ]}
-              onPress={handleOpenModal}
-              disabled={!selectedTeam}
-            >
-              <Text
-                style={[
-                  styles.extraButtonText,
-                  !selectedTeam && styles.disabledText,
-                ]}
-              >
-                Add Card
-              </Text>
-            </TouchableOpacity> */}
-
             <View style={styles.profileSection}>
               <TouchableOpacity
                 style={styles.profileButton}
