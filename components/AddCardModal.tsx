@@ -1,56 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { useAuth } from "@/store/authStore";
-import { getColumns } from "@/services/card";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (
-    title: string,
-    description: string,
-    columeTitle: string,
-    storyPoint: number,
-  ) => void;
+  onSubmit: (title: string, description: string, storyPoint: number) => void;
+  columnTitle: string;
 };
 
 export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [columnTitle, setColumnTitle] = useState("");
-  const [columns, setColumns] = useState<string[]>([]);
   const [storyPoint, setStoryPoint] = useState<number>(0);
-
-  const selectedTeam = useAuth((state) => state.selectedTeam);
-
-  useEffect(() => {
-    const fetchColumns = async () => {
-      if (!selectedTeam) {
-        console.warn("No team selected");
-        return;
-      }
-
-      try {
-        const data = await getColumns(selectedTeam);
-        setColumns(data);
-        if (data.length > 0) setColumnTitle(data[0]);
-      } catch (error) {
-        console.error("Failed to fetch columns: ", error);
-      }
-    };
-
-    if (visible) fetchColumns();
-  }, [visible, selectedTeam]);
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
+    // safety, ensure storypoint is a number
     const storyPointNumber =
       typeof storyPoint === "string" ? parseInt(storyPoint, 10) : storyPoint;
 
     try {
-      onSubmit(title, description, columnTitle, storyPointNumber);
+      onSubmit(title, description, storyPoint);
       setTitle("");
       setDescription("");
       setStoryPoint(0);
@@ -65,7 +37,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.container}>
         <View style={styles.modal}>
-          <Text style={styles.title}>Add Card</Text>
+          <Text>Add Card</Text>
           <TextInput
             placeholder="Title"
             value={title}
@@ -77,20 +49,8 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
             value={description}
             onChangeText={setDescription}
             style={styles.input}
-            multiline
           />
-          <Text style={styles.label}>Add to column:</Text>
-          <Picker
-            selectedValue={columnTitle}
-            onValueChange={(itemValue: string) => setColumnTitle(itemValue)}
-            style={styles.picker}
-          >
-            {(columns ?? []).map((col) => (
-              <Picker.Item key={col} label={col} value={col} />
-            ))}
-          </Picker>
-
-          <Text style={styles.label}>Story Point:</Text>
+          <Text style={{ marginTop: 10 }}>Story Point:</Text>
           <Picker
             selectedValue={storyPoint}
             onValueChange={(value) => {
@@ -104,11 +64,8 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
               <Picker.Item key={num} label={num.toString()} value={num} />
             ))}
           </Picker>
-
-          <View style={styles.buttonContainer}>
-            <Button title="Submit" onPress={handleSubmit} />
-            <Button title="Cancel" onPress={onClose} color="#666" />
-          </View>
+          <Button title="Add Card" onPress={handleSubmit} />
+          <Button title="Cancel" onPress={onClose} />
         </View>
       </View>
     </Modal>
@@ -121,24 +78,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#00000088",
   },
-  modal: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    maxHeight: "80%",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  label: {
-    marginTop: 10,
-    marginBottom: 5,
-    fontWeight: "500",
-  },
+  modal: { margin: 20, padding: 20, backgroundColor: "#fff", borderRadius: 8 },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -147,11 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   picker: {
-    marginVertical: 5,
+    marginVertical: 10,
     backgroundColor: "#f2f2f2",
-  },
-  buttonContainer: {
-    marginTop: 20,
-    gap: 10,
   },
 });

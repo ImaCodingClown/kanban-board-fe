@@ -1,12 +1,19 @@
 import { DraxProvider, DraxView } from "react-native-drax";
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+} from "react-native";
 import { useBoard, useUpdateBoard } from "../hooks/useBoard";
 import { BoardModel, CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
 import { addCard, deleteCard, editCard } from "@/services/card";
 import { useAuth } from "@/store/authStore";
 import { EditCardModal } from "@/components/EditCardModal";
+import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 
 const { width } = Dimensions.get("window");
 
@@ -16,11 +23,18 @@ export const BoardScreen = () => {
   const user = useAuth((state) => state.user);
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [activeColumn, setActiveColumn] = useState<string>("");
   const updateBoardMutation = useUpdateBoard();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingCard, setEditingCard] = useState<
     (CardModel & { columnTitle: string }) | null
   >(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<{
+    id: string;
+    columnTitle: string;
+    title: string;
+  } | null>(null);
 
   const board: BoardModel | undefined = data;
 
@@ -113,7 +127,6 @@ export const BoardScreen = () => {
   const handleAddCard = async (
     title: string,
     description: string,
-    columnTitle: string,
     storyPoint: number,
   ) => {
     if (!selectedTeam) {
@@ -125,13 +138,13 @@ export const BoardScreen = () => {
       const new_card = await addCard({
         title,
         description,
-        columnTitle,
+        columnTitle: activeColumn,
         storyPoint,
         team: selectedTeam,
       });
       setColumns((prevColumns) => {
         const newColumns = prevColumns.map((column) => {
-          if (column.title === columnTitle) {
+          if (column.title === activeColumn) {
             return {
               ...column,
               cards: [...column.cards, new_card],
@@ -144,6 +157,27 @@ export const BoardScreen = () => {
       });
     } catch (error) {
       console.error("Failed to add card: ", error);
+    }
+  };
+
+  const openAddCardModal = (columnTitle: string) => {
+    setActiveColumn(columnTitle);
+    setShowModal(true);
+  };
+
+  const confirmDeleteCard = (
+    cardId: string,
+    columnTitle: string,
+    cardTitle: string,
+  ) => {
+    setCardToDelete({ id: cardId, columnTitle, title: cardTitle });
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (cardToDelete) {
+      handleDeleteCard(cardToDelete.id, cardToDelete.columnTitle);
+      setCardToDelete(null);
     }
   };
 
@@ -229,6 +263,7 @@ export const BoardScreen = () => {
           visible={showModal}
           onClose={() => setShowModal(false)}
           onSubmit={handleAddCard}
+          columnTitle={activeColumn}
         />
         {editingCard && (
           <EditCardModal
@@ -238,6 +273,32 @@ export const BoardScreen = () => {
             onSuccess={handleEditCard}
           />
         )}
+        <ConfirmDeleteModal
+          visible={deleteModalVisible}
+          onClose={() => {
+            setDeleteModalVisible(false);
+            setCardToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          message={`Are you sure you want to delete "${cardToDelete?.title}"?`}
+        />
+        {editingCard && (
+          <EditCardModal
+            visible={editModalVisible}
+            onClose={() => setEditModalVisible(false)}
+            card={editingCard}
+            onSuccess={handleEditCard}
+          />
+        )}
+        <ConfirmDeleteModal
+          visible={deleteModalVisible}
+          onClose={() => {
+            setDeleteModalVisible(false);
+            setCardToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          message={`Are you sure you want to delete "${cardToDelete?.title}"?`}
+        />
         <View style={styles.board}>
           {columns
             .filter((col) => typeof col.title === "string")
@@ -252,50 +313,63 @@ export const BoardScreen = () => {
                 testID={`column-${col.title}`}
               >
                 <Text style={styles.columnTitle}>{col.title}</Text>
-                {col.cards.map((card) => (
-                  <DraxView
-                    key={card._id}
-                    style={styles.card}
-                    draggingStyle={styles.dragging}
-                    hoverDraggingStyle={styles.hoverDragging}
-                    dragReleasedStyle={styles.dragging}
-                    dragPayload={card}
-                    longPressDelay={150}
-                    receptive={false}
-                    draggable
-                  >
-                    <Text
-                      style={styles.deleteButton}
-                      onPress={() =>
-                        handleDeleteCard(card._id!, col.title.toString())
-                      }
+                <View style={styles.cardsContainer}>
+                  {col.cards.map((card) => (
+                    <DraxView
+                      key={card._id}
+                      style={styles.card}
+                      draggingStyle={styles.dragging}
+                      hoverDraggingStyle={styles.hoverDragging}
+                      dragReleasedStyle={styles.dragging}
+                      dragPayload={card}
+                      longPressDelay={150}
+                      receptive={false}
+                      draggable
                     >
-                      ❌
-                    </Text>
-                    <Text
-                      style={styles.editButton}
-                      onPress={() => {
-                        setEditingCard({ ...card, columnTitle: col.title });
-                        setEditModalVisible(true);
-                      }}
-                    >
-                      edit
-                    </Text>
-                    <Text style={styles.cardTitle}>{card.title}</Text>
-                    {card.description && (
-                      <Text style={styles.cardDescription}>
-                        {card.description}
+                      <Text
+                        style={styles.deleteButton}
+                        onPress={() =>
+                          confirmDeleteCard(
+                            card._id!,
+                            col.title.toString(),
+                            card.title,
+                          )
+                        }
+                      >
+                        ❌
                       </Text>
-                    )}
-                    {card.assignee && <Text>Assignee: {card.assignee}</Text>}
-                    {card.story_point !== undefined && card.story_point > 0 && (
-                      <Text style={styles.storyPoint}>
-                        Story Point: {card.story_point}
+                      <Text
+                        style={styles.editButton}
+                        onPress={() => {
+                          setEditingCard({ ...card, columnTitle: col.title });
+                          setEditModalVisible(true);
+                        }}
+                      >
+                        edit
                       </Text>
-                    )}
-                    {card.priority && <Text>Priority: {card.priority}</Text>}
-                  </DraxView>
-                ))}
+                      <Text style={styles.cardTitle}>{card.title}</Text>
+                      {card.description && (
+                        <Text style={styles.cardDescription}>
+                          {card.description}
+                        </Text>
+                      )}
+                      {card.assignee && <Text>Assignee: {card.assignee}</Text>}
+                      {card.story_point !== undefined &&
+                        card.story_point > 0 && (
+                          <Text style={styles.storyPoint}>
+                            Story Point: {card.story_point}
+                          </Text>
+                        )}
+                      {card.priority && <Text>Priority: {card.priority}</Text>}
+                    </DraxView>
+                  ))}
+                </View>
+                <TouchableOpacity
+                  style={styles.addCardButton}
+                  onPress={() => openAddCardModal(col.title.toString())}
+                >
+                  <Text style={styles.addCardButtonText}>+ Add Card</Text>
+                </TouchableOpacity>
               </DraxView>
             ))}
         </View>
@@ -357,6 +431,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minHeight: 500,
     overflow: "visible",
+    display: "flex",
+    flexDirection: "column",
   },
   receiving: {
     backgroundColor: "#d1c4e9",
@@ -366,6 +442,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginBottom: 10,
     textAlign: "center",
+  },
+  cardsContainer: {
+    flex: 1,
   },
   card: {
     padding: 10,
@@ -423,5 +502,20 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 11,
     color: "#007AFF",
+  },
+  addCardButton: {
+    backgroundColor: "#f0f0f0",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#ddd",
+    borderStyle: "dashed",
+    alignSelf: "stretch",
+  },
+  addCardButtonText: {
+    textAlign: "center",
+    color: "#666",
+    fontWeight: "500",
+    fontSize: 16,
   },
 });

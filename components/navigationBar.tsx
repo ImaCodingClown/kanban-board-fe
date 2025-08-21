@@ -21,7 +21,7 @@ export const NavigationBar: React.FC = () => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [columns, setColumns] = useState<string[]>([]);
-  const { mutate: createBoard } = useCreateBoard();
+  const { mutate: createBoard, isLoading } = useCreateBoard();
 
   const handleHomePress = () => {
     router.push("/board");
@@ -184,11 +184,6 @@ export const NavigationBar: React.FC = () => {
           </View>
         </View>
       </View>
-      <AddCardModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSubmit={handleSubmitCard}
-      />
     </SafeAreaView>
   );
 };
