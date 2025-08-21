@@ -36,7 +36,7 @@ export const LoginScreen = () => {
         id: me.id,
         username: me.username,
         email: me.email,
-        teams: [me.username],
+        teams: [me.teams],
       });
 
       router.replace("/board");

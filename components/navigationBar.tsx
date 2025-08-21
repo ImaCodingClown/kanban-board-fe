@@ -107,7 +107,7 @@ export const NavigationBar: React.FC = () => {
             <Text style={styles.homeText}>LJY</Text>
           </TouchableOpacity>
 
-          <TeamSelector />
+          {/* <TeamSelector /> */}
 
           <View style={styles.rightButton}>
             <TouchableOpacity
@@ -128,7 +128,7 @@ export const NavigationBar: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[
                 styles.extraButton,
                 !selectedTeam && styles.disabledButton,
@@ -144,7 +144,7 @@ export const NavigationBar: React.FC = () => {
               >
                 Add Card
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <View style={styles.profileSection}>
               <TouchableOpacity
