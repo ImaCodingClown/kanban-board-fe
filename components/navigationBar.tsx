@@ -37,7 +37,7 @@ export const NavigationBar: React.FC = () => {
       const setToken = useAuth.getState().setToken;
       const setUser = useAuth.getState().setUser;
       const setSelectedTeam = useAuth.getState().setSelectedTeam;
-      
+
       setToken(null);
       setUser(null);
       setSelectedTeam(undefined);
@@ -64,7 +64,13 @@ export const NavigationBar: React.FC = () => {
     }
 
     try {
-      await addCard({ title, description, columnTitle, storyPoint, team: selectedTeam });
+      await addCard({
+        title,
+        description,
+        columnTitle,
+        storyPoint,
+        team: selectedTeam,
+      });
     } catch (e) {
       console.error("Adding card failed: ", e);
     }
@@ -105,21 +111,37 @@ export const NavigationBar: React.FC = () => {
 
           <View style={styles.rightButton}>
             <TouchableOpacity
-              style={[styles.extraButton, !selectedTeam && styles.disabledButton]}
+              style={[
+                styles.extraButton,
+                !selectedTeam && styles.disabledButton,
+              ]}
               onPress={handleCreateBoard}
               disabled={!selectedTeam}
             >
-              <Text style={[styles.extraButtonText, !selectedTeam && styles.disabledText]}>
+              <Text
+                style={[
+                  styles.extraButtonText,
+                  !selectedTeam && styles.disabledText,
+                ]}
+              >
                 Create Board
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.extraButton, !selectedTeam && styles.disabledButton]}
+              style={[
+                styles.extraButton,
+                !selectedTeam && styles.disabledButton,
+              ]}
               onPress={handleOpenModal}
               disabled={!selectedTeam}
             >
-              <Text style={[styles.extraButtonText, !selectedTeam && styles.disabledText]}>
+              <Text
+                style={[
+                  styles.extraButtonText,
+                  !selectedTeam && styles.disabledText,
+                ]}
+              >
                 Add Card
               </Text>
             </TouchableOpacity>

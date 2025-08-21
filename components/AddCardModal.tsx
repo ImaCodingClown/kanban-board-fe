@@ -104,7 +104,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
               <Picker.Item key={num} label={num.toString()} value={num} />
             ))}
           </Picker>
-          
+
           <View style={styles.buttonContainer}>
             <Button title="Submit" onPress={handleSubmit} />
             <Button title="Cancel" onPress={onClose} color="#666" />
@@ -121,10 +121,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#00000088",
   },
-  modal: { 
-    margin: 20, 
-    padding: 20, 
-    backgroundColor: "#fff", 
+  modal: {
+    margin: 20,
+    padding: 20,
+    backgroundColor: "#fff",
     borderRadius: 8,
     maxHeight: "80%",
   },

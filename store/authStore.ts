@@ -29,14 +29,17 @@ export const useAuth = create<AuthState>()(
         if (user) {
           const correctedUser = {
             ...user,
-            teams: user.teams.includes("LJY Members") 
-              ? user.teams 
-              : ["LJY Members"]
+            teams: user.teams.includes("LJY Members")
+              ? user.teams
+              : ["LJY Members"],
           };
           set({ user: correctedUser });
-          
+
           const currentSelectedTeam = get().selectedTeam;
-          if (!currentSelectedTeam || !correctedUser.teams.includes(currentSelectedTeam)) {
+          if (
+            !currentSelectedTeam ||
+            !correctedUser.teams.includes(currentSelectedTeam)
+          ) {
             set({ selectedTeam: "LJY Members" });
           }
         } else {
