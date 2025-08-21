@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { ColumnModel } from "../models/board";
 import { useAuth } from "@/store/authStore";
 import { getColumns } from "@/services/card";
 
@@ -23,17 +22,17 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const [columns, setColumns] = useState<string[]>([]);
   const [storyPoint, setStoryPoint] = useState<number>(0);
 
-  const team = useAuth.getState().user?.teams?.[0];
+  const selectedTeam = useAuth((state) => state.selectedTeam);
 
   useEffect(() => {
     const fetchColumns = async () => {
-      if (!team) {
-        console.warn("No team assigned to user");
+      if (!selectedTeam) {
+        console.warn("No team selected");
         return;
       }
 
       try {
-        const data = await getColumns(team);
+        const data = await getColumns(selectedTeam);
         setColumns(data);
         if (data.length > 0) setColumnTitle(data[0]);
       } catch (error) {
@@ -42,17 +41,16 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
     };
 
     if (visible) fetchColumns();
-  }, [visible]);
+  }, [visible, selectedTeam]);
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
-    // safety, ensure storypoint is a number
     const storyPointNumber =
       typeof storyPoint === "string" ? parseInt(storyPoint, 10) : storyPoint;
 
     try {
-      onSubmit(title, description, columnTitle, storyPoint);
+      onSubmit(title, description, columnTitle, storyPointNumber);
       setTitle("");
       setDescription("");
       setStoryPoint(0);
@@ -67,7 +65,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.container}>
         <View style={styles.modal}>
-          <Text>Add Card</Text>
+          <Text style={styles.title}>Add Card</Text>
           <TextInput
             placeholder="Title"
             value={title}
@@ -79,9 +77,9 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
             value={description}
             onChangeText={setDescription}
             style={styles.input}
+            multiline
           />
-          {/* Column picker */}
-          <Text style={{ marginTop: 10 }}>Add to column:</Text>
+          <Text style={styles.label}>Add to column:</Text>
           <Picker
             selectedValue={columnTitle}
             onValueChange={(itemValue: string) => setColumnTitle(itemValue)}
@@ -92,7 +90,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
             ))}
           </Picker>
 
-          <Text style={{ marginTop: 10 }}>Story Point:</Text>
+          <Text style={styles.label}>Story Point:</Text>
           <Picker
             selectedValue={storyPoint}
             onValueChange={(value) => {
@@ -106,8 +104,11 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
               <Picker.Item key={num} label={num.toString()} value={num} />
             ))}
           </Picker>
-          <Button title="Submit" onPress={handleSubmit} />
-          <Button title="Cancel" onPress={onClose} />
+          
+          <View style={styles.buttonContainer}>
+            <Button title="Submit" onPress={handleSubmit} />
+            <Button title="Cancel" onPress={onClose} color="#666" />
+          </View>
         </View>
       </View>
     </Modal>
@@ -120,7 +121,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#00000088",
   },
-  modal: { margin: 20, padding: 20, backgroundColor: "#fff", borderRadius: 8 },
+  modal: { 
+    margin: 20, 
+    padding: 20, 
+    backgroundColor: "#fff", 
+    borderRadius: 8,
+    maxHeight: "80%",
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  label: {
+    marginTop: 10,
+    marginBottom: 5,
+    fontWeight: "500",
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -129,7 +147,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   picker: {
-    marginVertical: 10,
+    marginVertical: 5,
     backgroundColor: "#f2f2f2",
+  },
+  buttonContainer: {
+    marginTop: 20,
+    gap: 10,
   },
 });

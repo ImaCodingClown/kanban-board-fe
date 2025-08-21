@@ -12,6 +12,7 @@ export const ProfileScreen = () => {
         <>
           <Text>Username: {user.username}</Text>
           <Text>Email: {user.email}</Text>
+          <Text>Teams: {user.teams}</Text>
         </>
       ) : (
         <Text>You are not logged in.</Text>
