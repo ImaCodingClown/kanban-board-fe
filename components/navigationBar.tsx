@@ -9,25 +9,12 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
-import { AddCardModal } from "./AddCardModal";
-import { ColumnModel } from "../models/board";
-import { addCard, getColumns } from "@/services/card";
 import { useCreateBoard } from "../hooks/useBoard";
 
-export const NavigationBar: React.FC<{
-  columns: ColumnModel[];
-  onSubmitCard: (
-    title: string,
-    description: string,
-    columnTitle: string,
-    storyPoint: number,
-  ) => Promise<void>;
-}> = ({ onSubmitCard }) => {
+export const NavigationBar: React.FC = () => {
   const router = useRouter();
   const setToken = useAuth((state) => state.setToken);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [columns, setColumns] = useState<string[]>([]);
   const { mutate: createBoard, isLoading } = useCreateBoard();
 
   const handleHomePress = () => {
@@ -53,41 +40,6 @@ export const NavigationBar: React.FC<{
     setShowProfileDropdown(!showProfileDropdown);
   };
 
-  const handleSubmitCard = async (
-    title: string,
-    description: string,
-    columnTitle: string,
-    storyPoint: number,
-  ) => {
-    const team = useAuth.getState().user?.teams?.[0];
-    if (!team) {
-      console.error("No team for the user.");
-      return;
-    }
-
-    try {
-      await addCard({ title, description, columnTitle, storyPoint, team });
-    } catch (e) {
-      console.error("Adding card failed: ", e);
-    }
-  };
-
-  const handleOpenModal = async () => {
-    const team = useAuth.getState().user?.teams?.[0];
-    if (!team) {
-      console.error("No team for the user.");
-      return;
-    }
-
-    try {
-      const columnTitles = await getColumns(team);
-      setColumns(columnTitles);
-      setModalVisible(true);
-    } catch (e) {
-      console.error("Failed to fetch columns:", e);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.navbar}>
@@ -104,13 +56,6 @@ export const NavigationBar: React.FC<{
               onPress={() => createBoard()}
             >
               <Text style={styles.extraButtonText}>Create Board</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.extraButton}
-              onPress={() => setModalVisible(true)}
-            >
-              <Text style={styles.extraButtonText}>Add Card</Text>
             </TouchableOpacity>
 
             {/* User Profile Section */}
@@ -153,11 +98,6 @@ export const NavigationBar: React.FC<{
           </View>
         </View>
       </View>
-      <AddCardModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSubmit={handleSubmitCard}
-      />
     </SafeAreaView>
   );
 };

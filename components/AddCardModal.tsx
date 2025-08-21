@@ -1,49 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { ColumnModel } from "../models/board";
-import { useAuth } from "@/store/authStore";
-import { getColumns } from "@/services/card";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (
-    title: string,
-    description: string,
-    columeTitle: string,
-    storyPoint: number,
-  ) => void;
+  onSubmit: (title: string, description: string, storyPoint: number) => void;
+  columnTitle: string;
 };
 
 export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [columnTitle, setColumnTitle] = useState("");
-  const [columns, setColumns] = useState<string[]>([]);
   const [storyPoint, setStoryPoint] = useState<number>(0);
-
-  const team = useAuth.getState().user?.teams?.[0];
-
-  useEffect(() => {
-    const fetchColumns = async () => {
-      if (!team) {
-        console.warn("No team assigned to user");
-        return;
-      }
-
-      try {
-        const data = await getColumns(team);
-        setColumns(data);
-        if (data.length > 0) setColumnTitle(data[0]);
-      } catch (error) {
-        console.error("Failed to fetch columns: ", error);
-      }
-    };
-
-    if (visible) fetchColumns();
-  }, [visible]);
-
+  
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
@@ -52,7 +22,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
       typeof storyPoint === "string" ? parseInt(storyPoint, 10) : storyPoint;
 
     try {
-      onSubmit(title, description, columnTitle, storyPoint);
+      onSubmit(title, description, storyPoint);
       setTitle("");
       setDescription("");
       setStoryPoint(0);
@@ -80,18 +50,6 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
             onChangeText={setDescription}
             style={styles.input}
           />
-          {/* Column picker */}
-          <Text style={{ marginTop: 10 }}>Add to column:</Text>
-          <Picker
-            selectedValue={columnTitle}
-            onValueChange={(itemValue: string) => setColumnTitle(itemValue)}
-            style={styles.picker}
-          >
-            {(columns ?? []).map((col) => (
-              <Picker.Item key={col} label={col} value={col} />
-            ))}
-          </Picker>
-
           <Text style={{ marginTop: 10 }}>Story Point:</Text>
           <Picker
             selectedValue={storyPoint}
@@ -106,7 +64,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
               <Picker.Item key={num} label={num.toString()} value={num} />
             ))}
           </Picker>
-          <Button title="Submit" onPress={handleSubmit} />
+          <Button title="Add Card" onPress={handleSubmit} />
           <Button title="Cancel" onPress={onClose} />
         </View>
       </View>
