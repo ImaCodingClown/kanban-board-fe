@@ -6,25 +6,26 @@ import {
   StyleSheet,
   SafeAreaView,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
-import { AddCardModal } from "./AddCardModal";
-import { TeamSelector } from "./teamSelector";
-import { addCard, getColumns } from "@/services/card";
-import { useCreateBoard } from "../hooks/useBoard";
 
 export const NavigationBar: React.FC = () => {
   const router = useRouter();
-  const setToken = useAuth((state) => state.setToken);
+  const pathname = usePathname();
   const selectedTeam = useAuth((state) => state.selectedTeam);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [columns, setColumns] = useState<string[]>([]);
-  const { mutate: createBoard, isLoading } = useCreateBoard();
 
   const handleHomePress = () => {
-    router.push("/board");
+    router.push("/teams");
+  };
+
+  const handleBoardPress = () => {
+    if (selectedTeam) {
+      router.push("/board");
+    } else {
+      router.push("/teams");
+    }
   };
 
   const handleProfilePress = () => {
@@ -52,51 +53,10 @@ export const NavigationBar: React.FC = () => {
     setShowProfileDropdown(!showProfileDropdown);
   };
 
-  const handleSubmitCard = async (
-    title: string,
-    description: string,
-    columnTitle: string,
-    storyPoint: number,
-  ) => {
-    if (!selectedTeam) {
-      console.error("No team selected.");
-      return;
+  const handleCreateTeam = () => {
+    if (global.openCreateTeamModal) {
+      global.openCreateTeamModal();
     }
-
-    try {
-      await addCard({
-        title,
-        description,
-        columnTitle,
-        storyPoint,
-        team: selectedTeam,
-      });
-    } catch (e) {
-      console.error("Adding card failed: ", e);
-    }
-  };
-
-  const handleOpenModal = async () => {
-    if (!selectedTeam) {
-      console.error("No team selected.");
-      return;
-    }
-
-    try {
-      const columnTitles = await getColumns(selectedTeam);
-      setColumns(columnTitles);
-      setModalVisible(true);
-    } catch (e) {
-      console.error("Failed to fetch columns:", e);
-    }
-  };
-
-  const handleCreateBoard = () => {
-    if (!selectedTeam) {
-      console.error("No team selected.");
-      return;
-    }
-    createBoard();
   };
 
   return (
@@ -107,26 +67,72 @@ export const NavigationBar: React.FC = () => {
             <Text style={styles.homeText}>LJY</Text>
           </TouchableOpacity>
 
-          {/* <TeamSelector /> */}
-
-          <View style={styles.rightButton}>
+          <View style={styles.navLinks}>
             <TouchableOpacity
               style={[
-                styles.extraButton,
-                !selectedTeam && styles.disabledButton,
+                styles.navLink,
+                pathname === "/teams" && styles.activeNavLink,
               ]}
-              onPress={handleCreateBoard}
-              disabled={!selectedTeam}
+              onPress={() => router.push("/teams")}
             >
+              <Ionicons
+                name="people"
+                size={20}
+                color={pathname === "/teams" ? "#007AFF" : "#666"}
+              />
               <Text
                 style={[
-                  styles.extraButtonText,
-                  !selectedTeam && styles.disabledText,
+                  styles.navLinkText,
+                  pathname === "/teams" && styles.activeNavLinkText,
                 ]}
               >
-                Create Board
+                Teams
               </Text>
             </TouchableOpacity>
+
+            {selectedTeam && (
+              <TouchableOpacity
+                style={[
+                  styles.navLink,
+                  pathname === "/board" && styles.activeNavLink,
+                ]}
+                onPress={handleBoardPress}
+              >
+                <Ionicons
+                  name="grid"
+                  size={20}
+                  color={pathname === "/board" ? "#007AFF" : "#666"}
+                />
+                <Text
+                  style={[
+                    styles.navLinkText,
+                    pathname === "/board" && styles.activeNavLinkText,
+                  ]}
+                >
+                  Board
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.rightSection}>
+            {selectedTeam && pathname === "/board" && (
+              <View style={styles.currentTeamBadge}>
+                <Text style={styles.currentTeamText}>
+                  Current Team: {selectedTeam}
+                </Text>
+              </View>
+            )}
+
+            {pathname === "/teams" && (
+              <TouchableOpacity
+                style={styles.createTeamButton}
+                onPress={handleCreateTeam}
+              >
+                <Ionicons name="add-circle" size={20} color="white" />
+                <Text style={styles.createTeamButtonText}>Create New Team</Text>
+              </TouchableOpacity>
+            )}
 
             <View style={styles.profileSection}>
               <TouchableOpacity
@@ -209,13 +215,70 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontWeight: "600",
   },
+  navLinks: {
+    flexDirection: "row",
+    flex: 1,
+    marginLeft: 20,
+    gap: 16,
+  },
+  navLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  activeNavLink: {
+    backgroundColor: "#F0F8FF",
+  },
+  navLinkText: {
+    fontSize: 16,
+    color: "#666",
+    fontWeight: "500",
+  },
+  activeNavLinkText: {
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  rightSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  currentTeamBadge: {
+    backgroundColor: "#F0F8FF",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#007AFF20",
+  },
+  currentTeamText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  createTeamButton: {
+    flexDirection: "row",
+    backgroundColor: "#007AFF",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    gap: 6,
+  },
+  createTeamButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+  },
   profileSection: {
     position: "relative",
   },
   profileButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -255,27 +318,5 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: "#FF3B30",
-  },
-  rightButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  extraButton: {
-    marginLeft: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#F0F8FF",
-  },
-  extraButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  disabledText: {
-    color: "#999",
-  },
-  disabledButton: {
-    backgroundColor: "#f5f5f5",
   },
 });

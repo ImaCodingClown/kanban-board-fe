@@ -32,17 +32,18 @@ export const LoginScreen = () => {
       const { data: me } = await api.get("/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       setUser({
         id: me.id,
         username: me.username,
         email: me.email,
-        teams: [me.teams],
+        teams: me.teams || [],
       });
 
-      router.replace("/board");
+      router.replace("/teams");
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.message || "Login failed");
+      alert(error.response?.data?.error || "Login failed");
     } finally {
       setLoading(false);
     }

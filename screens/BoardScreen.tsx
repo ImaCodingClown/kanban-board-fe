@@ -7,6 +7,8 @@ import {
   Dimensions,
   TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useBoard, useUpdateBoard } from "../hooks/useBoard";
 import { BoardModel, CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
@@ -18,6 +20,7 @@ import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 const { width } = Dimensions.get("window");
 
 export const BoardScreen = () => {
+  const router = useRouter();
   const { data, isLoading, error } = useBoard();
   const selectedTeam = useAuth((state) => state.selectedTeam);
   const user = useAuth((state) => state.user);
@@ -55,10 +58,18 @@ export const BoardScreen = () => {
   if (!selectedTeam) {
     return (
       <View style={styles.centerContainer}>
+        <Ionicons name="alert-circle" size={64} color="#FF9500" />
         <Text style={styles.errorText}>No team selected</Text>
         <Text style={styles.infoText}>
-          Please select a team from the navigation bar
+          Please select a team to view its board
         </Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => router.push("/teams")}
+        >
+          <Ionicons name="people" size={20} color="white" />
+          <Text style={styles.actionButtonText}>Go to Teams</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -255,32 +266,15 @@ export const BoardScreen = () => {
   return (
     <DraxProvider>
       <View style={styles.screen}>
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <Text style={styles.teamTitle}>Team: {selectedTeam}</Text>
-        </View>
+        </View> */}
 
         <AddCardModal
           visible={showModal}
           onClose={() => setShowModal(false)}
           onSubmit={handleAddCard}
           columnTitle={activeColumn}
-        />
-        {editingCard && (
-          <EditCardModal
-            visible={editModalVisible}
-            onClose={() => setEditModalVisible(false)}
-            card={editingCard}
-            onSuccess={handleEditCard}
-          />
-        )}
-        <ConfirmDeleteModal
-          visible={deleteModalVisible}
-          onClose={() => {
-            setDeleteModalVisible(false);
-            setCardToDelete(null);
-          }}
-          onConfirm={handleConfirmDelete}
-          message={`Are you sure you want to delete "${cardToDelete?.title}"?`}
         />
         {editingCard && (
           <EditCardModal
@@ -411,12 +405,28 @@ const styles = StyleSheet.create({
     color: "#d32f2f",
     textAlign: "center",
     fontWeight: "bold",
+    marginBottom: 10,
   },
   infoText: {
     fontSize: 14,
     color: "#666",
     textAlign: "center",
     marginTop: 8,
+    marginBottom: 20,
+  },
+  actionButton: {
+    flexDirection: "row",
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    gap: 8,
+  },
+  actionButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
   board: {
     flex: 1,

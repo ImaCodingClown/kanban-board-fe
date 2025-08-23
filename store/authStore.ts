@@ -25,27 +25,7 @@ export const useAuth = create<AuthState>()(
       user: null,
       selectedTeam: undefined,
       setToken: (token) => set({ token }),
-      setUser: (user) => {
-        if (user) {
-          const correctedUser = {
-            ...user,
-            teams: user.teams.includes("LJY Members")
-              ? user.teams
-              : ["LJY Members"],
-          };
-          set({ user: correctedUser });
-
-          const currentSelectedTeam = get().selectedTeam;
-          if (
-            !currentSelectedTeam ||
-            !correctedUser.teams.includes(currentSelectedTeam)
-          ) {
-            set({ selectedTeam: "LJY Members" });
-          }
-        } else {
-          set({ user });
-        }
-      },
+      setUser: (user) => set({ user }),
       setSelectedTeam: (team) => set({ selectedTeam: team }),
       getSelectedTeam: () => get().selectedTeam,
     }),
