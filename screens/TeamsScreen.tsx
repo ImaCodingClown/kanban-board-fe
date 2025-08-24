@@ -13,7 +13,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/store/authStore";
-import { api } from "@/services/api";
+import { teamsService } from "@/services/teams";
+import { Team } from "@/models/teams";
 
 declare global {
   var openCreateTeamModal: (() => void) | undefined;
@@ -22,21 +23,15 @@ declare global {
 export const TeamsScreen = () => {
   const router = useRouter();
   const user = useAuth((state) => state.user);
-  const setUser = useAuth((state) => state.setUser);
-  const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
-  const [teams, setTeams] = useState<string[]>(user?.teams || []);
 
-  useEffect(() => {
-    if (teams.length > 0) {
-      console.log("Teams state changed:", teams);
-      console.log("Teams length:", teams.length);
-    }
-  }, [teams]);
+  const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [teamToDelete, setTeamToDelete] = useState<string>("");
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamDescription, setNewTeamDescription] = useState("");
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -45,23 +40,10 @@ export const TeamsScreen = () => {
       setCreateModalVisible(true);
     };
 
-    const token = useAuth.getState().token;
-    console.log(
-      "Component mounted, auth token status:",
-      token ? "Present" : "Missing",
-    );
-
     return () => {
       global.openCreateTeamModal = undefined;
     };
   }, []);
-
-  useEffect(() => {
-    if (user && user.teams) {
-      console.log("User changed, updating teams state:", user.teams);
-      setTeams(user.teams);
-    }
-  }, [user]);
 
   useEffect(() => {
     loadTeams();
@@ -74,25 +56,13 @@ export const TeamsScreen = () => {
     }
 
     try {
-      const { data: me } = await api.get("/me");
-      console.log("Fetched user teams from backend:", me.teams);
-
-      if (me && me.teams) {
-        console.log("Setting teams from backend:", me.teams);
-        setTeams(me.teams);
-      } else {
-        console.log("Using fallback teams from user state:", user.teams);
-        setTeams(user.teams || []);
+      const response = await teamsService.getUserTeams();
+      if (response.success) {
+        setTeams(response.teams);
       }
     } catch (error) {
       console.error("Failed to load teams:", error);
-      if (user && user.teams) {
-        console.log(
-          "Using fallback teams from user state after error:",
-          user.teams,
-        );
-        setTeams(user.teams);
-      }
+      Alert.alert("Error", "Failed to load teams");
     } finally {
       setLoading(false);
     }
@@ -104,108 +74,39 @@ export const TeamsScreen = () => {
       return;
     }
 
-    if (teams.includes(newTeamName.trim())) {
-      Alert.alert("Error", "You are already a member of this team");
-      return;
-    }
-
-    const token = useAuth.getState().token;
-    console.log(
-      "Current auth token:",
-      token ? token.substring(0, 20) + "..." : "None",
-    );
-
-    if (!token) {
-      Alert.alert(
-        "Error",
-        "Authentication token not found. Please login again.",
-      );
-      return;
-    }
-
     setCreating(true);
     try {
-      console.log("Creating board for team:", newTeamName.trim());
-      console.log("Request headers:", api.defaults.headers);
-
-      const boardResponse = await api.post("/board", {
-        team: newTeamName.trim(),
+      const response = await teamsService.createTeam({
+        name: newTeamName.trim(),
+        description: newTeamDescription.trim() || undefined,
       });
 
-      console.log("Board response:", boardResponse.data);
-      if (!boardResponse.data) {
-        throw new Error("Failed to create board");
-      }
-
-      console.log("Creating team:", newTeamName.trim());
-      const createResponse = await api.post("/teams/create", {
-        team_name: newTeamName.trim(),
-      });
-
-      console.log("Create team response:", createResponse.data);
-      console.log("Response success:", createResponse.data?.success);
-      console.log("Response teams:", createResponse.data?.teams);
-
-      if (!createResponse.data || !createResponse.data.success) {
-        throw new Error("Failed to create team");
-      }
-
-      const updatedTeams = createResponse.data.teams || [
-        ...teams,
-        newTeamName.trim(),
-      ];
-
-      console.log("Creating team - Response teams:", createResponse.data.teams);
-      console.log("Updated teams:", updatedTeams);
-
-      setTeams(updatedTeams);
-
-      const updatedUser = {
-        ...user!,
-        teams: updatedTeams,
-      };
-      setUser(updatedUser);
-
-      console.log("Updated user:", updatedUser);
-
-      setCreateModalVisible(false);
-      setNewTeamName("");
-
-      Alert.alert("Success", "Team created successfully!");
-      console.log("Final teams state:", updatedTeams);
-      console.log("Final user state:", updatedUser);
-
-      setTimeout(() => {
-        console.log("Refreshing teams from backend...");
+      if (response.success) {
+        setTeams([...teams, response.team]);
+        setCreateModalVisible(false);
+        setNewTeamName("");
+        setNewTeamDescription("");
+        Alert.alert("Success", "Team created successfully!");
         loadTeams();
-      }, 500);
+      }
     } catch (error: any) {
       console.error("Failed to create team:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
-
       let errorMessage = "Failed to create team";
       if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
-      } else if (error.message) {
-        errorMessage = error.message;
       }
-
       Alert.alert("Error", errorMessage);
     } finally {
       setCreating(false);
     }
   };
 
-  const confirmDeleteTeam = (teamName: string) => {
-    if (teamName === "LJY Members") {
+  const confirmDeleteTeam = (team: Team) => {
+    if (team.name === "LJY Members") {
       Alert.alert("Error", "Cannot delete the LJY Members team");
       return;
     }
-    setTeamToDelete(teamName);
+    setTeamToDelete(team);
     setDeleteModalVisible(true);
   };
 
@@ -214,33 +115,17 @@ export const TeamsScreen = () => {
 
     setDeleting(true);
     try {
-      const deleteResponse = await api.post("/teams/delete", {
-        team_name: teamToDelete,
-      });
-
-      if (!deleteResponse.data || !deleteResponse.data.success) {
-        throw new Error("Failed to delete team");
+      const response = await teamsService.deleteTeam(teamToDelete.name);
+      if (response.success) {
+        setTeams(teams.filter((team) => team._id !== teamToDelete._id));
+        const currentSelectedTeam = useAuth.getState().selectedTeam;
+        if (currentSelectedTeam === teamToDelete.name) {
+          setSelectedTeam(undefined);
+        }
+        setDeleteModalVisible(false);
+        setTeamToDelete(null);
+        Alert.alert("Success", "Team deleted successfully!");
       }
-
-      const updatedTeams =
-        deleteResponse.data.teams ||
-        teams.filter((team) => team !== teamToDelete);
-      setTeams(updatedTeams);
-
-      const updatedUser = {
-        ...user!,
-        teams: updatedTeams,
-      };
-      setUser(updatedUser);
-
-      const currentSelectedTeam = useAuth.getState().selectedTeam;
-      if (currentSelectedTeam === teamToDelete) {
-        setSelectedTeam(undefined);
-      }
-
-      setDeleteModalVisible(false);
-      setTeamToDelete("");
-      Alert.alert("Success", "Team deleted successfully!");
     } catch (error: any) {
       console.error("Failed to delete team:", error);
       Alert.alert(
@@ -257,10 +142,10 @@ export const TeamsScreen = () => {
     router.push("/board");
   };
 
-  const renderTeamCard = ({ item }: { item: string }) => (
+  const renderTeamCard = ({ item }: { item: Team }) => (
     <TouchableOpacity
       style={styles.teamCard}
-      onPress={() => handleSelectTeam(item)}
+      onPress={() => handleSelectTeam(item.name)}
       activeOpacity={0.7}
     >
       <View style={styles.teamCardContent}>
@@ -268,11 +153,16 @@ export const TeamsScreen = () => {
           <Ionicons name="people" size={32} color="#007AFF" />
         </View>
         <View style={styles.teamInfo}>
-          <Text style={styles.teamName}>{item}</Text>
-          <Text style={styles.teamSubtext}>Tap to view board</Text>
+          <Text style={styles.teamName}>{item.name}</Text>
+          <Text style={styles.teamSubtext}>
+            {item.description || "No description"}
+          </Text>
+          <Text style={styles.teamMembers}>
+            {item.members.length} member{item.members.length !== 1 ? "s" : ""}
+          </Text>
         </View>
         <View style={styles.teamActions}>
-          {item !== "LJY Members" && (
+          {item.name !== "LJY Members" && (
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={(e) => {
@@ -294,12 +184,6 @@ export const TeamsScreen = () => {
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Loading teams...</Text>
-        <Text style={styles.loadingText}>
-          Current teams count: {teams.length}
-        </Text>
-        <Text style={styles.loadingText}>
-          User teams: {user?.teams?.join(", ") || "None"}
-        </Text>
       </View>
     );
   }
@@ -332,15 +216,12 @@ export const TeamsScreen = () => {
           <Text style={styles.emptySubtext}>
             Click "Create New Team" button above to get started
           </Text>
-          <Text style={styles.emptySubtext}>
-            Debug: User teams from store: {user?.teams?.join(", ") || "None"}
-          </Text>
         </View>
       ) : (
         <FlatList
           data={teams}
           renderItem={renderTeamCard}
-          keyExtractor={(item) => item}
+          keyExtractor={(item) => item._id || item.name}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />
@@ -359,6 +240,7 @@ export const TeamsScreen = () => {
                 onPress={() => {
                   setCreateModalVisible(false);
                   setNewTeamName("");
+                  setNewTeamDescription("");
                 }}
                 style={styles.closeButton}
               >
@@ -375,12 +257,23 @@ export const TeamsScreen = () => {
               maxLength={50}
             />
 
+            <TextInput
+              style={[styles.input, styles.descriptionInput]}
+              placeholder="Enter team description (optional)"
+              value={newTeamDescription}
+              onChangeText={setNewTeamDescription}
+              maxLength={200}
+              multiline
+              numberOfLines={3}
+            />
+
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   setCreateModalVisible(false);
                   setNewTeamName("");
+                  setNewTeamDescription("");
                 }}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -389,7 +282,7 @@ export const TeamsScreen = () => {
               <TouchableOpacity
                 style={[
                   styles.modalButton,
-                  styles.createButton,
+                  styles.modalCreateButton,
                   creating && styles.disabledButton,
                 ]}
                 onPress={handleCreateTeam}
@@ -413,38 +306,37 @@ export const TeamsScreen = () => {
         onRequestClose={() => {
           if (!deleting) {
             setDeleteModalVisible(false);
-            setTeamToDelete("");
+            setTeamToDelete(null);
           }
         }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.deleteModalContent}>
-            {/* Warning Icon */}
             <View style={styles.deleteIconContainer}>
               <Ionicons name="warning" size={56} color="#FF9500" />
             </View>
 
-            {/* Title */}
             <Text style={styles.deleteModalTitle}>Delete Team</Text>
 
-            {/* Message */}
             <Text style={styles.deleteModalMessage}>
               Are you sure you want to delete{" "}
-              <Text style={styles.teamNameHighlight}>"{teamToDelete}"</Text>?
+              <Text style={styles.teamNameHighlight}>
+                "{teamToDelete?.name}"
+              </Text>
+              ?
             </Text>
             <Text style={styles.deleteModalSubtext}>
               This action cannot be undone and you will lose access to all
               boards and data associated with this team.
             </Text>
 
-            {/* Action Buttons */}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   if (!deleting) {
                     setDeleteModalVisible(false);
-                    setTeamToDelete("");
+                    setTeamToDelete(null);
                   }
                 }}
                 disabled={deleting}
@@ -509,6 +401,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000",
   },
+
   listContainer: {
     padding: 20,
   },
@@ -548,6 +441,11 @@ const styles = StyleSheet.create({
   teamSubtext: {
     fontSize: 14,
     color: "#8E8E93",
+  },
+  teamMembers: {
+    fontSize: 14,
+    color: "#8E8E93",
+    marginTop: 4,
   },
   teamActions: {
     flexDirection: "row",
@@ -651,6 +549,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 20,
   },
+  descriptionInput: {
+    height: 80,
+    textAlignVertical: "top",
+  },
   modalActions: {
     flexDirection: "row",
     gap: 16,
@@ -673,13 +575,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  createButton: {
-    backgroundColor: "#007AFF",
-  },
   createButtonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  modalCreateButton: {
+    backgroundColor: "#007AFF",
   },
   disabledButton: {
     opacity: 0.6,

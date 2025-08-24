@@ -1,10 +1,32 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
+import { teamsService } from "@/services/teams";
+import { Team } from "@/models/teams";
 
 export const ProfileScreen = () => {
   const user = useAuth((state) => state.user);
+  const [userTeams, setUserTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserTeams = async () => {
+      if (user?.email) {
+        try {
+          setLoading(true);
+          const response = await teamsService.getUserTeams();
+          setUserTeams(response.teams);
+        } catch (error) {
+          console.error("Failed to fetch user teams:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchUserTeams();
+  }, [user?.email]);
 
   if (!user) {
     return (
@@ -49,12 +71,20 @@ export const ProfileScreen = () => {
             <Ionicons name="people" size={20} color="#007AFF" />
             <View style={styles.infoContent}>
               <Text style={styles.label}>Teams</Text>
-              {user.teams && user.teams.length > 0 ? (
+              {loading ? (
+                <Text style={styles.value}>Loading teams...</Text>
+              ) : userTeams.length > 0 ? (
                 <View style={styles.teamsList}>
-                  {user.teams.map((team, index) => (
+                  {userTeams.map((team, index) => (
                     <View key={index} style={styles.teamItem}>
                       <Text style={styles.bullet}>•</Text>
-                      <Text style={styles.teamName}>{team}</Text>
+                      <Text style={styles.teamName}>{team.name}</Text>
+                      {team.description && (
+                        <Text style={styles.teamDescription}>
+                          {" "}
+                          - {team.description}
+                        </Text>
+                      )}
                     </View>
                   ))}
                 </View>
@@ -193,5 +223,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
     fontWeight: "500",
+  },
+  teamDescription: {
+    fontSize: 14,
+    color: "#8E8E93",
+    fontStyle: "italic",
   },
 });
