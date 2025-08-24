@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
 
 export const ProfileScreen = () => {
-  const user = useAuth.getState().user;
+  const user = useAuth((state) => state.user);
 
   if (!user) {
     return (
@@ -61,23 +61,6 @@ export const ProfileScreen = () => {
               ) : (
                 <Text style={styles.value}>No teams</Text>
               )}
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>Team Statistics</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{user.teams?.length || 0}</Text>
-              <Text style={styles.statLabel}>Total Teams</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {user.teams?.includes("LJY Members") ? "✓" : "✗"}
-              </Text>
-              <Text style={styles.statLabel}>LJY Member</Text>
             </View>
           </View>
         </View>

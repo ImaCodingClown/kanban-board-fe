@@ -24,7 +24,14 @@ export const TeamsScreen = () => {
   const user = useAuth((state) => state.user);
   const setUser = useAuth((state) => state.setUser);
   const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
-  const [teams, setTeams] = useState<string[]>([]);
+  const [teams, setTeams] = useState<string[]>(user?.teams || []);
+
+  useEffect(() => {
+    if (teams.length > 0) {
+      console.log("Teams state changed:", teams);
+      console.log("Teams length:", teams.length);
+    }
+  }, [teams]);
   const [loading, setLoading] = useState(true);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -38,14 +45,27 @@ export const TeamsScreen = () => {
       setCreateModalVisible(true);
     };
 
+    const token = useAuth.getState().token;
+    console.log(
+      "Component mounted, auth token status:",
+      token ? "Present" : "Missing",
+    );
+
     return () => {
       global.openCreateTeamModal = undefined;
     };
   }, []);
 
   useEffect(() => {
-    loadTeams();
+    if (user && user.teams) {
+      console.log("User changed, updating teams state:", user.teams);
+      setTeams(user.teams);
+    }
   }, [user]);
+
+  useEffect(() => {
+    loadTeams();
+  }, []);
 
   const loadTeams = async () => {
     if (!user) {
@@ -54,9 +74,25 @@ export const TeamsScreen = () => {
     }
 
     try {
-      setTeams(user.teams || []);
+      const { data: me } = await api.get("/me");
+      console.log("Fetched user teams from backend:", me.teams);
+
+      if (me && me.teams) {
+        console.log("Setting teams from backend:", me.teams);
+        setTeams(me.teams);
+      } else {
+        console.log("Using fallback teams from user state:", user.teams);
+        setTeams(user.teams || []);
+      }
     } catch (error) {
       console.error("Failed to load teams:", error);
+      if (user && user.teams) {
+        console.log(
+          "Using fallback teams from user state after error:",
+          user.teams,
+        );
+        setTeams(user.teams);
+      }
     } finally {
       setLoading(false);
     }
@@ -73,40 +109,92 @@ export const TeamsScreen = () => {
       return;
     }
 
+    const token = useAuth.getState().token;
+    console.log(
+      "Current auth token:",
+      token ? token.substring(0, 20) + "..." : "None",
+    );
+
+    if (!token) {
+      Alert.alert(
+        "Error",
+        "Authentication token not found. Please login again.",
+      );
+      return;
+    }
+
     setCreating(true);
     try {
-      const response = await api.post("/board", {
+      console.log("Creating board for team:", newTeamName.trim());
+      console.log("Request headers:", api.defaults.headers);
+
+      const boardResponse = await api.post("/board", {
         team: newTeamName.trim(),
       });
 
-      if (response.data) {
-        const updatedTeams = [...teams, newTeamName.trim()];
-
-        const updateResponse = await api.post("/update-user-teams", {
-          email: user!.email,
-          teams: updatedTeams,
-        });
-
-        if (updateResponse.data) {
-          setTeams(updatedTeams);
-
-          const updatedUser = {
-            ...user!,
-            teams: updatedTeams,
-          };
-          setUser(updatedUser);
-
-          setCreateModalVisible(false);
-          setNewTeamName("");
-          Alert.alert("Success", "Team created successfully!");
-        }
+      console.log("Board response:", boardResponse.data);
+      if (!boardResponse.data) {
+        throw new Error("Failed to create board");
       }
+
+      console.log("Creating team:", newTeamName.trim());
+      const createResponse = await api.post("/teams/create", {
+        team_name: newTeamName.trim(),
+      });
+
+      console.log("Create team response:", createResponse.data);
+      console.log("Response success:", createResponse.data?.success);
+      console.log("Response teams:", createResponse.data?.teams);
+
+      if (!createResponse.data || !createResponse.data.success) {
+        throw new Error("Failed to create team");
+      }
+
+      const updatedTeams = createResponse.data.teams || [
+        ...teams,
+        newTeamName.trim(),
+      ];
+
+      console.log("Creating team - Response teams:", createResponse.data.teams);
+      console.log("Updated teams:", updatedTeams);
+
+      setTeams(updatedTeams);
+
+      const updatedUser = {
+        ...user!,
+        teams: updatedTeams,
+      };
+      setUser(updatedUser);
+
+      console.log("Updated user:", updatedUser);
+
+      setCreateModalVisible(false);
+      setNewTeamName("");
+
+      Alert.alert("Success", "Team created successfully!");
+      console.log("Final teams state:", updatedTeams);
+      console.log("Final user state:", updatedUser);
+
+      setTimeout(() => {
+        console.log("Refreshing teams from backend...");
+        loadTeams();
+      }, 500);
     } catch (error: any) {
       console.error("Failed to create team:", error);
-      Alert.alert(
-        "Error",
-        error.response?.data?.error || "Failed to create team",
-      );
+      console.error("Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      let errorMessage = "Failed to create team";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert("Error", errorMessage);
     } finally {
       setCreating(false);
     }
@@ -126,36 +214,38 @@ export const TeamsScreen = () => {
 
     setDeleting(true);
     try {
-      const updatedTeams = teams.filter((team) => team !== teamToDelete);
-
-      const updateResponse = await api.post("/update-user-teams", {
-        email: user!.email,
-        teams: updatedTeams,
+      const deleteResponse = await api.post("/teams/delete", {
+        team_name: teamToDelete,
       });
 
-      if (updateResponse.data) {
-        setTeams(updatedTeams);
-
-        const updatedUser = {
-          ...user!,
-          teams: updatedTeams,
-        };
-        setUser(updatedUser);
-
-        const currentSelectedTeam = useAuth.getState().selectedTeam;
-        if (currentSelectedTeam === teamToDelete) {
-          setSelectedTeam(undefined);
-        }
-
-        setDeleteModalVisible(false);
-        setTeamToDelete("");
-        Alert.alert("Success", "Team removed successfully!");
+      if (!deleteResponse.data || !deleteResponse.data.success) {
+        throw new Error("Failed to delete team");
       }
+
+      const updatedTeams =
+        deleteResponse.data.teams ||
+        teams.filter((team) => team !== teamToDelete);
+      setTeams(updatedTeams);
+
+      const updatedUser = {
+        ...user!,
+        teams: updatedTeams,
+      };
+      setUser(updatedUser);
+
+      const currentSelectedTeam = useAuth.getState().selectedTeam;
+      if (currentSelectedTeam === teamToDelete) {
+        setSelectedTeam(undefined);
+      }
+
+      setDeleteModalVisible(false);
+      setTeamToDelete("");
+      Alert.alert("Success", "Team deleted successfully!");
     } catch (error: any) {
       console.error("Failed to delete team:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.error || "Failed to remove team",
+        error.response?.data?.error || error.message || "Failed to delete team",
       );
     } finally {
       setDeleting(false);
@@ -204,6 +294,12 @@ export const TeamsScreen = () => {
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Loading teams...</Text>
+        <Text style={styles.loadingText}>
+          Current teams count: {teams.length}
+        </Text>
+        <Text style={styles.loadingText}>
+          User teams: {user?.teams?.join(", ") || "None"}
+        </Text>
       </View>
     );
   }
@@ -235,6 +331,9 @@ export const TeamsScreen = () => {
           <Text style={styles.emptyTitle}>No teams yet</Text>
           <Text style={styles.emptySubtext}>
             Click "Create New Team" button above to get started
+          </Text>
+          <Text style={styles.emptySubtext}>
+            Debug: User teams from store: {user?.teams?.join(", ") || "None"}
           </Text>
         </View>
       ) : (
@@ -309,26 +408,47 @@ export const TeamsScreen = () => {
 
       <Modal
         visible={deleteModalVisible}
-        animationType="fade"
+        animationType="slide"
         transparent={true}
+        onRequestClose={() => {
+          if (!deleting) {
+            setDeleteModalVisible(false);
+            setTeamToDelete("");
+          }
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.deleteModalContent}>
-            <Ionicons name="alert-circle" size={48} color="#FF3B30" />
-            <Text style={styles.deleteModalTitle}>Remove Team</Text>
+            {/* Warning Icon */}
+            <View style={styles.deleteIconContainer}>
+              <Ionicons name="warning" size={56} color="#FF9500" />
+            </View>
+
+            {/* Title */}
+            <Text style={styles.deleteModalTitle}>Delete Team</Text>
+
+            {/* Message */}
             <Text style={styles.deleteModalMessage}>
-              Are you sure you want to leave "{teamToDelete}"?{"\n"}
-              This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <Text style={styles.teamNameHighlight}>"{teamToDelete}"</Text>?
+            </Text>
+            <Text style={styles.deleteModalSubtext}>
+              This action cannot be undone and you will lose access to all
+              boards and data associated with this team.
             </Text>
 
+            {/* Action Buttons */}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
-                  setDeleteModalVisible(false);
-                  setTeamToDelete("");
+                  if (!deleting) {
+                    setDeleteModalVisible(false);
+                    setTeamToDelete("");
+                  }
                 }}
                 disabled={deleting}
+                activeOpacity={0.7}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -341,11 +461,18 @@ export const TeamsScreen = () => {
                 ]}
                 onPress={handleDeleteTeam}
                 disabled={deleting}
+                activeOpacity={0.8}
               >
                 {deleting ? (
-                  <ActivityIndicator size="small" color="white" />
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="white" />
+                    <Text style={styles.loadingText}>Deleting...</Text>
+                  </View>
                 ) : (
-                  <Text style={styles.deleteButtonText}>Remove</Text>
+                  <View style={styles.deleteButtonContent}>
+                    <Ionicons name="trash-outline" size={18} color="white" />
+                    <Text style={styles.deleteButtonText}>Delete Team</Text>
+                  </View>
                 )}
               </TouchableOpacity>
             </View>
@@ -491,11 +618,16 @@ const styles = StyleSheet.create({
   },
   deleteModalContent: {
     backgroundColor: "white",
-    borderRadius: 16,
-    padding: 24,
-    width: "85%",
-    maxWidth: 400,
+    borderRadius: 20,
+    padding: 32,
+    width: "90%",
+    maxWidth: 420,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: "row",
@@ -521,14 +653,17 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 10,
+    gap: 16,
+    marginTop: 20,
+    width: "100%",
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
   },
   cancelButton: {
     backgroundColor: "#F2F2F7",
@@ -549,27 +684,63 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.6,
   },
+  deleteIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#FFF8E1",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
   deleteModalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#000",
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1C1C1E",
     textAlign: "center",
-    marginTop: 10,
-    marginBottom: 10,
+    marginBottom: 16,
   },
   deleteModalMessage: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 17,
+    color: "#3A3A3C",
     textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 22,
+    marginBottom: 12,
+    lineHeight: 24,
+    paddingHorizontal: 10,
+  },
+  teamNameHighlight: {
+    fontWeight: "700",
+    color: "#FF3B30",
+  },
+  deleteModalSubtext: {
+    fontSize: 15,
+    color: "#8E8E93",
+    textAlign: "center",
+    marginBottom: 32,
+    lineHeight: 20,
+    paddingHorizontal: 20,
   },
   deleteConfirmButton: {
     backgroundColor: "#FF3B30",
+    shadowColor: "#FF3B30",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   deleteButtonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  deleteButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 });
