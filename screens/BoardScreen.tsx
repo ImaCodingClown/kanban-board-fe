@@ -1,11 +1,12 @@
 import { DraxProvider, DraxView } from "react-native-drax";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -38,6 +39,14 @@ export const BoardScreen = () => {
     columnTitle: string;
     title: string;
   } | null>(null);
+
+  const shouldShowScrollIndicator = (cards: CardModel[]) => {
+    if (cards.length === 0) return false;
+    const estimatedCardHeight = 140;
+    const containerHeight = 380;
+    const totalCardsHeight = cards.length * estimatedCardHeight;
+    return totalCardsHeight > containerHeight;
+  };
 
   const board: BoardModel | undefined = data;
 
@@ -266,10 +275,6 @@ export const BoardScreen = () => {
   return (
     <DraxProvider>
       <View style={styles.screen}>
-        {/* <View style={styles.header}>
-          <Text style={styles.teamTitle}>Team: {selectedTeam}</Text>
-        </View> */}
-
         <AddCardModal
           visible={showModal}
           onClose={() => setShowModal(false)}
@@ -307,7 +312,15 @@ export const BoardScreen = () => {
                 testID={`column-${col.title}`}
               >
                 <Text style={styles.columnTitle}>{col.title}</Text>
-                <View style={styles.cardsContainer}>
+                <ScrollView
+                  style={styles.cardsContainer}
+                  showsVerticalScrollIndicator={shouldShowScrollIndicator(
+                    col.cards,
+                  )}
+                  nestedScrollEnabled={true}
+                  indicatorStyle="black"
+                  scrollIndicatorInsets={{ right: 0 }}
+                >
                   {col.cards.map((card) => (
                     <DraxView
                       key={card._id}
@@ -357,7 +370,7 @@ export const BoardScreen = () => {
                       {card.priority && <Text>Priority: {card.priority}</Text>}
                     </DraxView>
                   ))}
-                </View>
+                </ScrollView>
                 <TouchableOpacity
                   style={styles.addCardButton}
                   onPress={() => openAddCardModal(col.title.toString())}
@@ -436,9 +449,15 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     margin: 5,
+    marginTop: 15,
     backgroundColor: "#e0e0e0",
-    padding: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingLeft: 10,
+    paddingRight: 0,
     borderRadius: 10,
+    borderWidth: 0.5,
+    borderColor: "#e0e0e0",
     minHeight: 500,
     overflow: "visible",
     display: "flex",
@@ -456,7 +475,21 @@ const styles = StyleSheet.create({
   cardsContainer: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+    minHeight: "100%",
+  },
+  scrollIndicatorArea: {
+    position: "absolute",
+    right: 0,
+    top: 50,
+    bottom: 60,
+    width: 3,
+    backgroundColor: "rgba(0,0,0,0.08)",
+    borderRadius: 1.5,
+  },
   card: {
+    marginRight: 10,
     padding: 10,
     backgroundColor: "#ffffff",
     borderRadius: 5,
@@ -516,7 +549,9 @@ const styles = StyleSheet.create({
   addCardButton: {
     backgroundColor: "#f0f0f0",
     padding: 12,
-    borderRadius: 8,
+    marginLeft: -10,
+    marginBottom: -10,
+    borderRadius: 0,
     borderWidth: 2,
     borderColor: "#ddd",
     borderStyle: "dashed",
