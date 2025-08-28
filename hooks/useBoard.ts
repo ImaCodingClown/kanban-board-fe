@@ -1,22 +1,22 @@
 import { useMutation, useQuery } from "react-query";
-import { BoardModel, ColumnModel } from "@/models/board";
+import { BoardModel } from "@/models/board";
 import { useAuth } from "@/store/authStore";
 import { api } from "@/services/api";
 
 export const useBoard = () => {
   const user = useAuth((state) => state.user);
+  const selectedTeam = useAuth((state) => state.selectedTeam);
 
   return useQuery<BoardModel, Error>({
-    queryKey: ["board", user?.teams[0]],
-    enabled: Boolean(user?.teams?.length),
+    queryKey: ["board", selectedTeam],
+    enabled: Boolean(user && selectedTeam),
     queryFn: async () => {
-      if (!user) {
-        throw new Error("User not authenticated");
+      if (!user || !selectedTeam) {
+        throw new Error("User not authenticated or no team selected");
       }
 
       const response = await api.get<BoardModel>("/board", {
-        // TODO: Replace LJY Members
-        params: { team: "LJY Members" },
+        params: { team: selectedTeam },
       });
       return response.data;
     },
@@ -24,33 +24,28 @@ export const useBoard = () => {
 };
 
 export const useCreateBoard = () => {
-  const user = useAuth((state) => state.user);
+  const selectedTeam = useAuth((state) => state.selectedTeam);
 
   return useMutation({
-    mutationKey: ["createBoard"],
+    mutationKey: ["createBoard", selectedTeam],
     mutationFn: async () => {
-      if (!user || !user.teams?.length) {
-        throw new Error("User not authenticated or has no team");
+      if (!selectedTeam) {
+        throw new Error("No team selected");
       }
 
       const response = await api.post("/board", {
-        team: user.teams[0],
+        team: selectedTeam,
       });
 
       return response.data;
     },
   });
 };
-export const useUpdateBoard = () => {
-  const user = useAuth((state) => state.user);
 
+export const useUpdateBoard = () => {
   return useMutation({
     mutationKey: ["updateBoard"],
     mutationFn: async (board: BoardModel) => {
-      if (!user || !user.teams?.length) {
-        throw new Error("User not authenticated or has no team");
-      }
-
       const response = await api.put("/board", {
         board: board,
       });

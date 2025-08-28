@@ -6,19 +6,26 @@ import {
   StyleSheet,
   SafeAreaView,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
-import { useCreateBoard } from "../hooks/useBoard";
 
 export const NavigationBar: React.FC = () => {
   const router = useRouter();
-  const setToken = useAuth((state) => state.setToken);
+  const pathname = usePathname();
+  const selectedTeam = useAuth((state) => state.selectedTeam);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const { mutate: createBoard, isLoading } = useCreateBoard();
 
   const handleHomePress = () => {
-    router.push("/board");
+    router.push("/teams");
+  };
+
+  const handleBoardPress = () => {
+    if (selectedTeam) {
+      router.push("/board");
+    } else {
+      router.push("/teams");
+    }
   };
 
   const handleProfilePress = () => {
@@ -28,7 +35,13 @@ export const NavigationBar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      const setToken = useAuth.getState().setToken;
+      const setUser = useAuth.getState().setUser;
+      const setSelectedTeam = useAuth.getState().setSelectedTeam;
+
       setToken(null);
+      setUser(null);
+      setSelectedTeam(undefined);
       setShowProfileDropdown(false);
       router.replace("/login");
     } catch (error) {
@@ -40,25 +53,87 @@ export const NavigationBar: React.FC = () => {
     setShowProfileDropdown(!showProfileDropdown);
   };
 
+  const handleCreateTeam = () => {
+    if (global.openCreateTeamModal) {
+      global.openCreateTeamModal();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.navbar}>
         <View style={styles.navContent}>
-          {/* Home Button */}
           <TouchableOpacity style={styles.homeButton} onPress={handleHomePress}>
             <Text style={styles.homeText}>LJY</Text>
           </TouchableOpacity>
 
-          {/* Right Section with Extra Buttons */}
-          <View style={styles.rightButton}>
+          <View style={styles.navLinks}>
             <TouchableOpacity
-              style={styles.extraButton}
-              onPress={() => createBoard()}
+              style={[
+                styles.navLink,
+                pathname === "/teams" && styles.activeNavLink,
+              ]}
+              onPress={() => router.push("/teams")}
             >
-              <Text style={styles.extraButtonText}>Create Board</Text>
+              <Ionicons
+                name="people"
+                size={20}
+                color={pathname === "/teams" ? "#007AFF" : "#666"}
+              />
+              <Text
+                style={[
+                  styles.navLinkText,
+                  pathname === "/teams" && styles.activeNavLinkText,
+                ]}
+              >
+                Teams
+              </Text>
             </TouchableOpacity>
 
-            {/* User Profile Section */}
+            {selectedTeam && (
+              <TouchableOpacity
+                style={[
+                  styles.navLink,
+                  pathname === "/board" && styles.activeNavLink,
+                ]}
+                onPress={handleBoardPress}
+              >
+                <Ionicons
+                  name="grid"
+                  size={20}
+                  color={pathname === "/board" ? "#007AFF" : "#666"}
+                />
+                <Text
+                  style={[
+                    styles.navLinkText,
+                    pathname === "/board" && styles.activeNavLinkText,
+                  ]}
+                >
+                  Board
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.rightSection}>
+            {selectedTeam && pathname === "/board" && (
+              <View style={styles.currentTeamBadge}>
+                <Text style={styles.currentTeamText}>
+                  Current Team: {selectedTeam}
+                </Text>
+              </View>
+            )}
+
+            {pathname === "/teams" && (
+              <TouchableOpacity
+                style={styles.createTeamButton}
+                onPress={handleCreateTeam}
+              >
+                <Ionicons name="add-circle" size={20} color="white" />
+                <Text style={styles.createTeamButtonText}>Create New Team</Text>
+              </TouchableOpacity>
+            )}
+
             <View style={styles.profileSection}>
               <TouchableOpacity
                 style={styles.profileButton}
@@ -72,7 +147,6 @@ export const NavigationBar: React.FC = () => {
                 />
               </TouchableOpacity>
 
-              {/* Dropdown Menu */}
               {showProfileDropdown && (
                 <View style={styles.dropdown}>
                   <TouchableOpacity
@@ -137,9 +211,66 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F8FF",
   },
   homeText: {
-    //marginLeft: 8,
     fontSize: 20,
     color: "#007AFF",
+    fontWeight: "600",
+  },
+  navLinks: {
+    flexDirection: "row",
+    flex: 1,
+    marginLeft: 20,
+    gap: 16,
+  },
+  navLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  activeNavLink: {
+    backgroundColor: "#F0F8FF",
+  },
+  navLinkText: {
+    fontSize: 16,
+    color: "#666",
+    fontWeight: "500",
+  },
+  activeNavLinkText: {
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  rightSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  currentTeamBadge: {
+    backgroundColor: "#F0F8FF",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#007AFF20",
+  },
+  currentTeamText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  createTeamButton: {
+    flexDirection: "row",
+    backgroundColor: "#007AFF",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    gap: 6,
+  },
+  createTeamButtonText: {
+    color: "white",
+    fontSize: 14,
     fontWeight: "600",
   },
   profileSection: {
@@ -148,7 +279,6 @@ const styles = StyleSheet.create({
   profileButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -188,22 +318,5 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: "#FF3B30",
-  },
-
-  rightButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  extraButton: {
-    marginLeft: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#F0F8FF",
-  },
-  extraButtonText: {
-    fontSize: 20,
-    color: "#007AFF",
-    fontWeight: "600",
   },
 });

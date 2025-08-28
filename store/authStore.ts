@@ -11,17 +11,23 @@ export interface User {
 interface AuthState {
   token: string | null;
   user: User | null;
+  selectedTeam: string | undefined;
   setToken: (token: string | null) => void;
   setUser: (user: User | null) => void;
+  setSelectedTeam: (team: string | undefined) => void;
+  getSelectedTeam: () => string | undefined;
 }
 
 export const useAuth = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       token: null,
       user: null,
+      selectedTeam: undefined,
       setToken: (token) => set({ token }),
       setUser: (user) => set({ user }),
+      setSelectedTeam: (team) => set({ selectedTeam: team }),
+      getSelectedTeam: () => get().selectedTeam,
     }),
     {
       name: "auth-storage",

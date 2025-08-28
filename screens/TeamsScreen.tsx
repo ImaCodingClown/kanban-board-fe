@@ -1,0 +1,648 @@
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+  Modal,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useAuth } from "@/store/authStore";
+import { teamsService } from "@/services/teams";
+import { Team } from "@/models/teams";
+
+declare global {
+  var openCreateTeamModal: (() => void) | undefined;
+}
+
+export const TeamsScreen = () => {
+  const router = useRouter();
+  const user = useAuth((state) => state.user);
+
+  const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamDescription, setNewTeamDescription] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    global.openCreateTeamModal = () => {
+      setCreateModalVisible(true);
+    };
+
+    return () => {
+      global.openCreateTeamModal = undefined;
+    };
+  }, []);
+
+  useEffect(() => {
+    loadTeams();
+  }, []);
+
+  const loadTeams = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await teamsService.getUserTeams();
+      if (response.success) {
+        setTeams(response.teams);
+      }
+    } catch (error) {
+      console.error("Failed to load teams:", error);
+      Alert.alert("Error", "Failed to load teams");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTeam = async () => {
+    if (!newTeamName.trim()) {
+      Alert.alert("Error", "Please enter a team name");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const response = await teamsService.createTeam({
+        name: newTeamName.trim(),
+        description: newTeamDescription.trim() || undefined,
+      });
+
+      if (response.success) {
+        setTeams([...teams, response.team]);
+        setCreateModalVisible(false);
+        setNewTeamName("");
+        setNewTeamDescription("");
+        Alert.alert("Success", "Team created successfully!");
+        loadTeams();
+      }
+    } catch (error: any) {
+      console.error("Failed to create team:", error);
+      let errorMessage = "Failed to create team";
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const confirmDeleteTeam = (team: Team) => {
+    if (team.name === "LJY Members") {
+      Alert.alert("Error", "Cannot delete the LJY Members team");
+      return;
+    }
+    setTeamToDelete(team);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteTeam = async () => {
+    if (!teamToDelete) return;
+
+    setDeleting(true);
+    try {
+      const response = await teamsService.deleteTeam(teamToDelete.name);
+      if (response.success) {
+        setTeams(teams.filter((team) => team._id !== teamToDelete._id));
+        const currentSelectedTeam = useAuth.getState().selectedTeam;
+        if (currentSelectedTeam === teamToDelete.name) {
+          setSelectedTeam(undefined);
+        }
+        setDeleteModalVisible(false);
+        setTeamToDelete(null);
+        Alert.alert("Success", "Team deleted successfully!");
+      }
+    } catch (error: any) {
+      console.error("Failed to delete team:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || error.message || "Failed to delete team",
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleSelectTeam = (teamName: string) => {
+    setSelectedTeam(teamName);
+    router.push("/board");
+  };
+
+  const renderTeamCard = ({ item }: { item: Team }) => (
+    <TouchableOpacity
+      style={styles.teamCard}
+      onPress={() => handleSelectTeam(item.name)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.teamCardContent}>
+        <View style={styles.teamIconContainer}>
+          <Ionicons name="people" size={32} color="#007AFF" />
+        </View>
+        <View style={styles.teamInfo}>
+          <Text style={styles.teamName}>{item.name}</Text>
+          <Text style={styles.teamSubtext}>
+            {item.description || "No description"}
+          </Text>
+          <Text style={styles.teamMembers}>
+            {item.members.length} member{item.members.length !== 1 ? "s" : ""}
+          </Text>
+        </View>
+        <View style={styles.teamActions}>
+          {item.name !== "LJY Members" && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                confirmDeleteTeam(item);
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+            </TouchableOpacity>
+          )}
+          <Ionicons name="chevron-forward" size={24} color="#C7C7CC" />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading teams...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.centerContainer}>
+        <Ionicons name="alert-circle" size={64} color="#FF3B30" />
+        <Text style={styles.errorText}>Not authenticated</Text>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.replace("/login")}
+        >
+          <Text style={styles.primaryButtonText}>Go to Login</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Teams</Text>
+      </View>
+
+      {teams.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="folder-open-outline" size={80} color="#C7C7CC" />
+          <Text style={styles.emptyTitle}>No teams yet</Text>
+          <Text style={styles.emptySubtext}>
+            Click "Create New Team" button above to get started
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={teams}
+          renderItem={renderTeamCard}
+          keyExtractor={(item) => item._id || item.name}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+
+      <Modal
+        visible={createModalVisible}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create New Team</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setCreateModalVisible(false);
+                  setNewTeamName("");
+                  setNewTeamDescription("");
+                }}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Enter team name"
+              value={newTeamName}
+              onChangeText={setNewTeamName}
+              autoFocus
+              maxLength={50}
+            />
+
+            <TextInput
+              style={[styles.input, styles.descriptionInput]}
+              placeholder="Enter team description (optional)"
+              value={newTeamDescription}
+              onChangeText={setNewTeamDescription}
+              maxLength={200}
+              multiline
+              numberOfLines={3}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setCreateModalVisible(false);
+                  setNewTeamName("");
+                  setNewTeamDescription("");
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.modalCreateButton,
+                  creating && styles.disabledButton,
+                ]}
+                onPress={handleCreateTeam}
+                disabled={creating}
+              >
+                {creating ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.createButtonText}>Create</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={deleteModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          if (!deleting) {
+            setDeleteModalVisible(false);
+            setTeamToDelete(null);
+          }
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.deleteModalContent}>
+            <View style={styles.deleteIconContainer}>
+              <Ionicons name="warning" size={56} color="#FF9500" />
+            </View>
+
+            <Text style={styles.deleteModalTitle}>Delete Team</Text>
+
+            <Text style={styles.deleteModalMessage}>
+              Are you sure you want to delete{" "}
+              <Text style={styles.teamNameHighlight}>
+                "{teamToDelete?.name}"
+              </Text>
+              ?
+            </Text>
+            <Text style={styles.deleteModalSubtext}>
+              This action cannot be undone and you will lose access to all
+              boards and data associated with this team.
+            </Text>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  if (!deleting) {
+                    setDeleteModalVisible(false);
+                    setTeamToDelete(null);
+                  }
+                }}
+                disabled={deleting}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.deleteConfirmButton,
+                  deleting && styles.disabledButton,
+                ]}
+                onPress={handleDeleteTeam}
+                disabled={deleting}
+                activeOpacity={0.8}
+              >
+                {deleting ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="white" />
+                    <Text style={styles.loadingText}>Deleting...</Text>
+                  </View>
+                ) : (
+                  <View style={styles.deleteButtonContent}>
+                    <Ionicons name="trash-outline" size={18} color="white" />
+                    <Text style={styles.deleteButtonText}>Delete Team</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F2F2F7",
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#000",
+  },
+
+  listContainer: {
+    padding: 20,
+  },
+  teamCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  teamCardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+  },
+  teamIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#F0F8FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  teamInfo: {
+    flex: 1,
+  },
+  teamName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 4,
+  },
+  teamSubtext: {
+    fontSize: 14,
+    color: "#8E8E93",
+  },
+  teamMembers: {
+    fontSize: 14,
+    color: "#8E8E93",
+    marginTop: 4,
+  },
+  teamActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  deleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#FFF0F0",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: "#000",
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: "#8E8E93",
+    textAlign: "center",
+    marginBottom: 30,
+  },
+  primaryButton: {
+    flexDirection: "row",
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    gap: 8,
+  },
+  primaryButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#8E8E93",
+  },
+  errorText: {
+    fontSize: 18,
+    color: "#FF3B30",
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 24,
+    width: "85%",
+    maxWidth: 400,
+  },
+  deleteModalContent: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 32,
+    width: "90%",
+    maxWidth: 420,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#000",
+  },
+  closeButton: {
+    padding: 4,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  descriptionInput: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 20,
+    width: "100%",
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  cancelButton: {
+    backgroundColor: "#F2F2F7",
+  },
+  cancelButtonText: {
+    color: "#007AFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  createButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalCreateButton: {
+    backgroundColor: "#007AFF",
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  deleteIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#FFF8E1",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  deleteModalTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1C1C1E",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  deleteModalMessage: {
+    fontSize: 17,
+    color: "#3A3A3C",
+    textAlign: "center",
+    marginBottom: 12,
+    lineHeight: 24,
+    paddingHorizontal: 10,
+  },
+  teamNameHighlight: {
+    fontWeight: "700",
+    color: "#FF3B30",
+  },
+  deleteModalSubtext: {
+    fontSize: 15,
+    color: "#8E8E93",
+    textAlign: "center",
+    marginBottom: 32,
+    lineHeight: 20,
+    paddingHorizontal: 20,
+  },
+  deleteConfirmButton: {
+    backgroundColor: "#FF3B30",
+    shadowColor: "#FF3B30",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  deleteButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+});

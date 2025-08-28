@@ -1,5 +1,4 @@
 import { api } from "./api";
-import axios from "axios";
 
 export const addCard = async ({
   title,
@@ -19,14 +18,16 @@ export const addCard = async ({
     description,
     column_name: columnTitle,
     story_point: storyPoint,
-    team: "LJY Members",
+    team,
   });
 
   return response.data;
 };
 
 export const getColumns = async (team: string) => {
-  const response = await api.get(`/v1/columns?team=LJY Members`);
+  const response = await api.get(
+    `/v1/columns?team=${encodeURIComponent(team)}`,
+  );
   return response.data;
 };
 

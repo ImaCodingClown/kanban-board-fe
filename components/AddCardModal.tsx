@@ -13,7 +13,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [storyPoint, setStoryPoint] = useState<number>(0);
-  
+
   const handleSubmit = async () => {
     if (!title.trim()) return;
 

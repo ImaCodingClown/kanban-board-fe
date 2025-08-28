@@ -34,17 +34,21 @@ export const SignUpScreen = () => {
       const { data: me } = await api.get("/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      const userTeams =
+        me.teams && me.teams.length > 0 ? me.teams : ["LJY Members"];
+
       setUser({
         id: me.id,
         username: me.username,
         email: me.email,
-        teams: [me.username],
+        teams: userTeams,
       });
 
-      router.replace("/board");
+      router.replace("/teams");
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.message || err.message || "Signup failed");
+      alert(err.response?.data?.error || err.message || "Signup failed");
     } finally {
       setLoading(false);
     }
