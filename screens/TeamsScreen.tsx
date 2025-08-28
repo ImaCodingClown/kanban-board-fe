@@ -130,7 +130,7 @@ export const TeamsScreen = () => {
       console.error("Failed to delete team:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.error || error.message || "Failed to delete team",
+        error.response?.data?.error || error.message || "Failed to delete team"
       );
     } finally {
       setDeleting(false);

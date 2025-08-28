@@ -148,6 +148,7 @@ export const BoardScreen = () => {
     title: string,
     description: string,
     storyPoint: number,
+    assignee: string
   ) => {
     if (!selectedTeam) {
       console.error("No team selected.");
@@ -160,6 +161,7 @@ export const BoardScreen = () => {
         description,
         columnTitle: activeColumn,
         storyPoint,
+        assignee,
         team: selectedTeam,
       });
       setColumns((prevColumns) => {
@@ -188,7 +190,7 @@ export const BoardScreen = () => {
   const confirmDeleteCard = (
     cardId: string,
     columnTitle: string,
-    cardTitle: string,
+    cardTitle: string
   ) => {
     setCardToDelete({ id: cardId, columnTitle, title: cardTitle });
     setDeleteModalVisible(true);
@@ -222,7 +224,7 @@ export const BoardScreen = () => {
             };
           }
           return column;
-        }),
+        })
       );
     } catch (error) {
       console.error("Failed to delete card:", error);
@@ -233,6 +235,7 @@ export const BoardScreen = () => {
     title: string,
     description: string,
     storyPoint: number,
+    assignee: string
   ) => {
     if (!editingCard || !selectedTeam) return;
 
@@ -243,6 +246,7 @@ export const BoardScreen = () => {
         description: description,
         columnTitle: editingCard.columnTitle,
         storyPoint: storyPoint,
+        assignee,
         team: selectedTeam,
       });
 
@@ -258,11 +262,11 @@ export const BoardScreen = () => {
                   description: description,
                   story_point: storyPoint,
                 }
-              : card,
+              : card
           );
 
           return { ...col, cards: updatedCards };
-        }),
+        })
       );
 
       setEditModalVisible(false);
@@ -315,7 +319,7 @@ export const BoardScreen = () => {
                 <ScrollView
                   style={styles.cardsContainer}
                   showsVerticalScrollIndicator={shouldShowScrollIndicator(
-                    col.cards,
+                    col.cards
                   )}
                   nestedScrollEnabled={true}
                   indicatorStyle="black"
@@ -339,7 +343,7 @@ export const BoardScreen = () => {
                           confirmDeleteCard(
                             card._id!,
                             col.title.toString(),
-                            card.title,
+                            card.title
                           )
                         }
                       >
@@ -360,14 +364,15 @@ export const BoardScreen = () => {
                           {card.description}
                         </Text>
                       )}
-                      {card.assignee && <Text>Assignee: {card.assignee}</Text>}
+                      {card.assignee && (
+                        <Text style={styles.assignee}>{card.assignee}</Text>
+                      )}
                       {card.story_point !== undefined &&
                         card.story_point > 0 && (
                           <Text style={styles.storyPoint}>
                             Story Point: {card.story_point}
                           </Text>
                         )}
-                      {card.priority && <Text>Priority: {card.priority}</Text>}
                     </DraxView>
                   ))}
                 </ScrollView>
@@ -545,6 +550,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 11,
     color: "#007AFF",
+  },
+  assignee: {
+    fontWeight: "bold",
+    fontSize: 11,
+    color: "#35a152",
   },
   addCardButton: {
     backgroundColor: "#f0f0f0",

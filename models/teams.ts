@@ -1,5 +1,6 @@
 export interface TeamMember {
   user_id: string;
+  username: string;
   role: TeamRole;
   joined_at: string;
   permissions: string[];
@@ -32,6 +33,7 @@ export interface UpdateTeamPayload {
 }
 
 export interface AddMemberPayload {
+  username: string;
   user_id: string;
   role: TeamRole;
 }

@@ -14,7 +14,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
       console.log(
         "Adding auth token to request:",
-        token.substring(0, 20) + "...",
+        token.substring(0, 20) + "..."
       );
     } else {
       console.log("No auth token found for request");
@@ -22,6 +22,15 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.log("error inside api");
     return Promise.reject(error);
-  },
+  }
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error("API Error:", error.response?.status, error.config?.url);
+    return Promise.reject(error);
+  }
 );
