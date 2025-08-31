@@ -54,7 +54,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 api.interceptors.response.use(
@@ -97,7 +97,7 @@ api.interceptors.response.use(
       const delay = calculateRetryDelay(originalRequest._retryCount);
 
       console.log(
-        `Retrying request (${originalRequest._retryCount}/${RETRY_CONFIG.maxRetries}) after ${delay}ms`
+        `Retrying request (${originalRequest._retryCount}/${RETRY_CONFIG.maxRetries}) after ${delay}ms`,
       );
 
       return new Promise((resolve) => {
@@ -115,7 +115,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export const checkNetworkStatus = async (): Promise<boolean> => {

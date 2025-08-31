@@ -77,7 +77,7 @@ export const TeamsScreen = () => {
     message: string,
     type: "success" | "error" | "warning" | "info",
     onRetry?: () => void,
-    retryAfter?: number
+    retryAfter?: number,
   ) => {
     setToast({
       visible: true,
@@ -122,7 +122,7 @@ export const TeamsScreen = () => {
           `${errorMessage} Automatically retrying...`,
           "warning",
           () => loadTeams(),
-          retryAfter || undefined
+          retryAfter || undefined,
         );
       } else {
         showToast(errorMessage, "error");
@@ -169,7 +169,7 @@ export const TeamsScreen = () => {
           `${errorMessage} Would you like to retry?`,
           "warning",
           () => handleCreateTeam(),
-          retryAfter || undefined
+          retryAfter || undefined,
         );
       } else {
         showToast(errorMessage, "error");
@@ -220,7 +220,7 @@ export const TeamsScreen = () => {
           `${errorMessage} Would you like to retry?`,
           "warning",
           () => handleDeleteTeam(),
-          retryAfter || undefined
+          retryAfter || undefined,
         );
       } else {
         showToast(errorMessage, "error");
