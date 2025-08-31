@@ -15,6 +15,8 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/store/authStore";
 import { teamsService } from "@/services/teams";
 import { Team } from "@/models/teams";
+import { Toast } from "@/components/Toast";
+import { formatErrorMessage, canRetry, getRetryAfter } from "@/services/api";
 
 declare global {
   var openCreateTeamModal: (() => void) | undefined;
@@ -23,6 +25,9 @@ declare global {
 export const TeamsScreen = () => {
   const router = useRouter();
   const user = useAuth((state) => state.user);
+  const accessToken = useAuth((state) => state.accessToken);
+  const checkTokenExpiry = useAuth((state) => state.checkTokenExpiry);
+  const logout = useAuth((state) => state.logout);
 
   const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -35,6 +40,15 @@ export const TeamsScreen = () => {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Toast state
+  const [toast, setToast] = useState({
+    visible: false,
+    message: "",
+    type: "info" as "success" | "error" | "warning" | "info",
+    onRetry: undefined as (() => void) | undefined,
+    retryAfter: undefined as number | undefined,
+  });
+
   useEffect(() => {
     global.openCreateTeamModal = () => {
       setCreateModalVisible(true);
@@ -46,11 +60,40 @@ export const TeamsScreen = () => {
   }, []);
 
   useEffect(() => {
-    loadTeams();
-  }, []);
+    if (accessToken && user) {
+      const isTokenValid = checkTokenExpiry();
+      if (isTokenValid) {
+        loadTeams();
+      } else {
+        logout();
+        router.replace("/login");
+      }
+    } else {
+      setLoading(false);
+    }
+  }, [accessToken, user, checkTokenExpiry, logout, router]);
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "warning" | "info",
+    onRetry?: () => void,
+    retryAfter?: number
+  ) => {
+    setToast({
+      visible: true,
+      message,
+      type,
+      onRetry,
+      retryAfter,
+    });
+  };
+
+  const hideToast = () => {
+    setToast((prev) => ({ ...prev, visible: false }));
+  };
 
   const loadTeams = async () => {
-    if (!user) {
+    if (!user || !accessToken) {
       setLoading(false);
       return;
     }
@@ -59,10 +102,31 @@ export const TeamsScreen = () => {
       const response = await teamsService.getUserTeams();
       if (response.success) {
         setTeams(response.teams);
+        if (response.teams.length === 0) {
+          showToast("No teams yet. Create a new team to get started!", "info");
+        }
       }
-    } catch (error) {
-      console.error("Failed to load teams:", error);
-      Alert.alert("Error", "Failed to load teams");
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        logout();
+        router.replace("/login");
+        return;
+      }
+
+      const errorMessage = formatErrorMessage(error);
+      const canRetryError = canRetry(error);
+      const retryAfter = getRetryAfter(error);
+
+      if (canRetryError) {
+        showToast(
+          `${errorMessage} Automatically retrying...`,
+          "warning",
+          () => loadTeams(),
+          retryAfter || undefined
+        );
+      } else {
+        showToast(errorMessage, "error");
+      }
     } finally {
       setLoading(false);
     }
@@ -70,7 +134,7 @@ export const TeamsScreen = () => {
 
   const handleCreateTeam = async () => {
     if (!newTeamName.trim()) {
-      Alert.alert("Error", "Please enter a team name");
+      showToast("Please enter a team name.", "warning");
       return;
     }
 
@@ -86,16 +150,30 @@ export const TeamsScreen = () => {
         setCreateModalVisible(false);
         setNewTeamName("");
         setNewTeamDescription("");
-        Alert.alert("Success", "Team created successfully!");
+        showToast("Team created successfully!", "success");
         loadTeams();
       }
     } catch (error: any) {
-      console.error("Failed to create team:", error);
-      let errorMessage = "Failed to create team";
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
+      if (error.response?.status === 401) {
+        logout();
+        router.replace("/login");
+        return;
       }
-      Alert.alert("Error", errorMessage);
+
+      const errorMessage = formatErrorMessage(error);
+      const canRetryError = canRetry(error);
+      const retryAfter = getRetryAfter(error);
+
+      if (canRetryError) {
+        showToast(
+          `${errorMessage} Would you like to retry?`,
+          "warning",
+          () => handleCreateTeam(),
+          retryAfter || undefined
+        );
+      } else {
+        showToast(errorMessage, "error");
+      }
     } finally {
       setCreating(false);
     }
@@ -103,7 +181,7 @@ export const TeamsScreen = () => {
 
   const confirmDeleteTeam = (team: Team) => {
     if (team.name === "LJY Members") {
-      Alert.alert("Error", "Cannot delete the LJY Members team");
+      showToast("LJY Members team cannot be deleted.", "warning");
       return;
     }
     setTeamToDelete(team);
@@ -124,14 +202,29 @@ export const TeamsScreen = () => {
         }
         setDeleteModalVisible(false);
         setTeamToDelete(null);
-        Alert.alert("Success", "Team deleted successfully!");
+        showToast("Team deleted successfully!", "success");
       }
     } catch (error: any) {
-      console.error("Failed to delete team:", error);
-      Alert.alert(
-        "Error",
-        error.response?.data?.error || error.message || "Failed to delete team",
-      );
+      if (error.response?.status === 401) {
+        logout();
+        router.replace("/login");
+        return;
+      }
+
+      const errorMessage = formatErrorMessage(error);
+      const canRetryError = canRetry(error);
+      const retryAfter = getRetryAfter(error);
+
+      if (canRetryError) {
+        showToast(
+          `${errorMessage} Would you like to retry?`,
+          "warning",
+          () => handleDeleteTeam(),
+          retryAfter || undefined
+        );
+      } else {
+        showToast(errorMessage, "error");
+      }
     } finally {
       setDeleting(false);
     }
@@ -205,6 +298,13 @@ export const TeamsScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onClose={hideToast}
+      />
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Teams</Text>
       </View>
