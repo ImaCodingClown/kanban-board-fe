@@ -1,6 +1,5 @@
 import axios from "axios";
 import { useAuth } from "@/store/authStore";
-
 declare module "axios" {
   export interface InternalAxiosRequestConfig {
     _retryCount?: number;
@@ -10,7 +9,6 @@ declare module "axios" {
 
 export const api = axios.create({
   baseURL: "https://kanban-board-be.onrender.com", // your Rust backend
-
   // baseURL: "http://localhost:8080", // for local development
   timeout: 5000,
 });
@@ -49,7 +47,6 @@ api.interceptors.request.use(
     if (!config._retryCount) {
       config._retryCount = 0;
     }
-
     return config;
   },
   (error) => {

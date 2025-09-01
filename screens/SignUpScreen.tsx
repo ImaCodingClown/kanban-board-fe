@@ -63,7 +63,6 @@ export const SignUpScreen = () => {
     if (hasError) return;
 
     setLoading(true);
-
     try {
       const response = await api.post("/signup", {
         username,
