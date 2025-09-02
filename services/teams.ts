@@ -26,7 +26,7 @@ export const teamsService = {
 
   async updateTeam(
     teamName: string,
-    payload: UpdateTeamPayload
+    payload: UpdateTeamPayload,
   ): Promise<TeamResponse> {
     const response = await api.put<TeamResponse>(`/teams/${teamName}`, payload);
     return response.data;
@@ -34,36 +34,36 @@ export const teamsService = {
 
   async addMember(
     teamName: string,
-    payload: AddMemberPayload
+    payload: AddMemberPayload,
   ): Promise<TeamResponse> {
     const response = await api.post<TeamResponse>(
       `/teams/${teamName}/members`,
-      payload
+      payload,
     );
     return response.data;
   },
 
   async removeMember(
     teamName: string,
-    payload: RemoveMemberPayload
+    payload: RemoveMemberPayload,
   ): Promise<TeamResponse> {
     const response = await api.delete<TeamResponse>(
       `/teams/${teamName}/members`,
-      { data: payload }
+      { data: payload },
     );
     return response.data;
   },
 
   async leaveTeam(teamName: string): Promise<{ success: boolean }> {
     const response = await api.post<{ success: boolean }>(
-      `/teams/${teamName}/leave`
+      `/teams/${teamName}/leave`,
     );
     return response.data;
   },
 
   async deleteTeam(teamName: string): Promise<{ success: boolean }> {
     const response = await api.delete<{ success: boolean }>(
-      `/teams/${teamName}`
+      `/teams/${teamName}`,
     );
     return response.data;
   },

@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/store/authStore";
 import { teamsService } from "@/services/teams";
 import { Team } from "@/models/teams";
+import { FindMembersModal } from "@/components/FindMembersModal";
 
 declare global {
   var openCreateTeamModal: (() => void) | undefined;
@@ -34,6 +35,9 @@ export const TeamsScreen = () => {
   const [newTeamDescription, setNewTeamDescription] = useState("");
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [findMembersModalVisible, setFindMembersModalVisible] = useState(false);
+  const [selectedTeamForMembers, setSelectedTeamForMembers] =
+    useState<Team | null>(null);
 
   useEffect(() => {
     global.openCreateTeamModal = () => {
@@ -66,6 +70,30 @@ export const TeamsScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFindMembers = (team: Team) => {
+    setSelectedTeamForMembers(team);
+    setFindMembersModalVisible(true);
+  };
+
+  const handleMemberAdded = (updatedTeam: Team) => {
+    setTeams(
+      teams.map((team) => (team._id === updatedTeam._id ? updatedTeam : team)),
+    );
+  };
+
+  const isUserTeamLeader = (team: Team) => {
+    const userId =
+      typeof user?.id === "object" && (user?.id as any)?.$oid
+        ? (user.id as any).$oid
+        : user?.id;
+    const leaderId =
+      typeof team.leader_id === "object" && (team.leader_id as any)?.$oid
+        ? (team.leader_id as any).$oid
+        : team.leader_id;
+
+    return userId === leaderId;
   };
 
   const handleCreateTeam = async () => {
@@ -130,7 +158,7 @@ export const TeamsScreen = () => {
       console.error("Failed to delete team:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.error || error.message || "Failed to delete team"
+        error.response?.data?.error || error.message || "Failed to delete team",
       );
     } finally {
       setDeleting(false);
@@ -161,8 +189,20 @@ export const TeamsScreen = () => {
             {item.members.length} member{item.members.length !== 1 ? "s" : ""}
           </Text>
         </View>
+
         <View style={styles.teamActions}>
-          {item.name !== "LJY Members" && (
+          {isUserTeamLeader(item) && (
+            <TouchableOpacity
+              style={styles.findMembersButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleFindMembers(item);
+              }}
+            >
+              <Ionicons name="person-add-outline" size={20} color="#007AFF" />
+            </TouchableOpacity>
+          )}
+          {item.name !== "LJY Members" && isUserTeamLeader(item) && (
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={(e) => {
@@ -371,6 +411,15 @@ export const TeamsScreen = () => {
           </View>
         </View>
       </Modal>
+      <FindMembersModal
+        visible={findMembersModalVisible}
+        team={selectedTeamForMembers}
+        onClose={() => {
+          setFindMembersModalVisible(false);
+          setSelectedTeamForMembers(null);
+        }}
+        onMemberAdded={handleMemberAdded}
+      />
     </View>
   );
 };
@@ -644,5 +693,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  findMembersButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#F0F8FF",
   },
 });

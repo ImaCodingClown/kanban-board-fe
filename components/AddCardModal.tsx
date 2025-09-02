@@ -12,7 +12,7 @@ type Props = {
     title: string,
     description: string,
     storyPoint: number,
-    assignee: string
+    assignee: string,
   ) => void;
   columnTitle: string;
 };

@@ -148,7 +148,7 @@ export const BoardScreen = () => {
     title: string,
     description: string,
     storyPoint: number,
-    assignee: string
+    assignee: string,
   ) => {
     if (!selectedTeam) {
       console.error("No team selected.");
@@ -190,7 +190,7 @@ export const BoardScreen = () => {
   const confirmDeleteCard = (
     cardId: string,
     columnTitle: string,
-    cardTitle: string
+    cardTitle: string,
   ) => {
     setCardToDelete({ id: cardId, columnTitle, title: cardTitle });
     setDeleteModalVisible(true);
@@ -224,7 +224,7 @@ export const BoardScreen = () => {
             };
           }
           return column;
-        })
+        }),
       );
     } catch (error) {
       console.error("Failed to delete card:", error);
@@ -235,7 +235,7 @@ export const BoardScreen = () => {
     title: string,
     description: string,
     storyPoint: number,
-    assignee: string
+    assignee: string,
   ) => {
     if (!editingCard || !selectedTeam) return;
 
@@ -262,11 +262,11 @@ export const BoardScreen = () => {
                   description: description,
                   story_point: storyPoint,
                 }
-              : card
+              : card,
           );
 
           return { ...col, cards: updatedCards };
-        })
+        }),
       );
 
       setEditModalVisible(false);
@@ -319,7 +319,7 @@ export const BoardScreen = () => {
                 <ScrollView
                   style={styles.cardsContainer}
                   showsVerticalScrollIndicator={shouldShowScrollIndicator(
-                    col.cards
+                    col.cards,
                   )}
                   nestedScrollEnabled={true}
                   indicatorStyle="black"
@@ -343,7 +343,7 @@ export const BoardScreen = () => {
                           confirmDeleteCard(
                             card._id!,
                             col.title.toString(),
-                            card.title
+                            card.title,
                           )
                         }
                       >
