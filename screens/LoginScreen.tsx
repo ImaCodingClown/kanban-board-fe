@@ -5,6 +5,7 @@ import {
   TextInput,
   Button,
   StyleSheet,
+  Image,
   TextInput as RNTextInput,
 } from "react-native";
 import { api } from "../services/api";
@@ -51,6 +52,11 @@ export const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require("../assets/images/company-logo.png")}
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <Text style={styles.title}>Login</Text>
       <TextInput
         style={styles.input}
@@ -89,6 +95,12 @@ export const LoginScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 20 },
+  logo: {
+    width: 360,
+    height: 360,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
   title: { fontSize: 24, marginBottom: 20, textAlign: "center" },
   input: { borderWidth: 1, padding: 10, marginBottom: 10, borderRadius: 5 },
   space: { marginBottom: 5, width: "100%" },
