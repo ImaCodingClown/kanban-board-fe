@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Image,
   TextInput as RNTextInput,
   Dimensions,
   KeyboardAvoidingView,
@@ -137,6 +138,11 @@ export const LoginScreen = () => {
     >
       <View style={styles.content}>
         <View style={styles.header}>
+          <Image 
+        source={require("../assets/images/company-logo.png")} 
+        style={styles.logo} 
+        resizeMode="contain" 
+      />
           <Text style={styles.title}>Log in</Text>
           <Text style={styles.subtitle}>
             Welcome back! Please enter your details.
@@ -214,6 +220,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+   logo: {
+    width: 360,
+    height: 360,
+    alignSelf: "center",
+    marginBottom: 20,
   },
   content: {
     flex: 1,
@@ -324,4 +336,3 @@ const styles = StyleSheet.create({
     color: "#3b82f6",
     fontWeight: "600",
   },
-});

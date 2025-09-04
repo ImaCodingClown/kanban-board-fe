@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Image,
   TextInput as RNTextInput,
   Dimensions,
   KeyboardAvoidingView,
@@ -153,6 +154,11 @@ export const SignUpScreen = () => {
     >
       <View style={styles.content}>
         <View style={styles.header}>
+          <Image
+            source={require("../assets/images/company-logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+            />
           <Text style={styles.title}>Sign up</Text>
           <Text style={styles.subtitle}>
             Create your account to get started.
@@ -252,6 +258,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  logo: {
+    width: 360,
+    height: 360,
+    alignSelf: "center",
+    marginBottom: -50,
   },
   content: {
     flex: 1,
@@ -362,4 +374,3 @@ const styles = StyleSheet.create({
     color: "#3b82f6",
     fontWeight: "600",
   },
-});
