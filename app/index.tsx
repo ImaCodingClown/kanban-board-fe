@@ -4,8 +4,10 @@ import { useAuth } from "@/store/authStore";
 
 export default function Index() {
   const router = useRouter();
-  const token = useAuth((state) => state.token);
+  const accessToken = useAuth((state) => state.accessToken);
   const user = useAuth((state) => state.user);
+  const checkTokenExpiry = useAuth((state) => state.checkTokenExpiry);
+  const logout = useAuth((state) => state.logout);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -19,12 +21,18 @@ export default function Index() {
   useEffect(() => {
     if (!isReady) return;
 
-    if (token && user) {
-      router.replace("/teams");
+    if (accessToken && user) {
+      const isTokenValid = checkTokenExpiry();
+      if (isTokenValid) {
+        router.replace("/teams");
+      } else {
+        logout();
+        router.replace("/login");
+      }
     } else {
       router.replace("/login");
     }
-  }, [isReady, token, user, router]);
+  }, [isReady, accessToken, user, router, checkTokenExpiry, logout]);
 
   return null;
 }
