@@ -138,11 +138,11 @@ export const LoginScreen = () => {
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Image 
-        source={require("../assets/images/company-logo.png")} 
-        style={styles.logo} 
-        resizeMode="contain" 
-      />
+          <Image
+            source={require("../assets/images/company-logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>Log in</Text>
           <Text style={styles.subtitle}>
             Welcome back! Please enter your details.
@@ -221,21 +221,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8fafc",
   },
-   logo: {
-    width: 360,
-    height: 360,
+  logo: {
+    width: 200,
+    height: 200,
     alignSelf: "center",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   content: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   header: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 40,
   },
   title: {
     fontSize: 28,
@@ -336,3 +337,4 @@ const styles = StyleSheet.create({
     color: "#3b82f6",
     fontWeight: "600",
   },
+});

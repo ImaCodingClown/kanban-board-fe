@@ -29,7 +29,6 @@ export const TeamsScreen = () => {
   const checkTokenExpiry = useAuth((state) => state.checkTokenExpiry);
   const logout = useAuth((state) => state.logout);
 
-
   const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
