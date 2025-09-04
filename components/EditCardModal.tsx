@@ -3,7 +3,7 @@ import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { useAuth } from "@/store/authStore";
 import { CardModel } from "../models/board";
 import { editCard } from "@/services/card";
-import { Picker } from "@react-native-picker/picker";
+import { Pressable } from "react-native";
 
 type Props = {
   visible: boolean;
@@ -52,6 +52,8 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
     }
   };
 
+  const FIB = [1, 2, 3, 5, 8, 13, 21];
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.container}>
@@ -70,19 +72,33 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
             style={styles.input}
           />
           <Text style={{ marginTop: 10 }}>Story Points:</Text>
-          <Picker
-            selectedValue={storyPoint}
-            onValueChange={(value) => {
-              const numValue =
-                typeof value === "string" ? parseInt(value, 10) : value;
-              setStoryPoint(numValue);
-            }}
-            style={styles.picker}
-          >
-            {[...Array(10).keys()].map((num) => (
-              <Picker.Item key={num} label={num.toString()} value={num} />
-            ))}
-          </Picker>
+          <View style={styles.spShell}>
+            <View style={styles.spRow}>
+              {FIB.map((opt) => {
+                const active = storyPoint === opt;
+                return (
+                  <Pressable
+                    key={opt}
+                    onPress={() => setStoryPoint(opt)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    style={[
+                      styles.spChip,
+                      active ? styles.spChipActive : styles.spChipDefault,
+                    ]}
+                  >
+                    <Text
+                      style={
+                        active ? styles.spTextActive : styles.spTextDefault
+                      }
+                    >
+                      {opt}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
           <Button title="Save Changes" onPress={handleSubmit} />
           <Button title="Cancel" onPress={onClose} />
         </View>
@@ -110,8 +126,32 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     borderRadius: 4,
   },
-  picker: {
-    marginVertical: 13,
-    backgroundColor: "#f2f2f2",
+  spShell: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    backgroundColor: "#fff",
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    marginTop: 6,
+    marginBottom: 10,
   },
+  spRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 8,
+  },
+  spChip: {
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  spChipDefault: { backgroundColor: "#fff", borderColor: "#e5e5e5" },
+  spChipActive: { backgroundColor: "#2563eb", borderColor: "#1d4ed8" },
+  spTextDefault: { color: "#111827", fontWeight: "600" },
+  spTextActive: { color: "#fff", fontWeight: "700" },
 });
