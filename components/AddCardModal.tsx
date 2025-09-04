@@ -17,7 +17,8 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
     if (!title.trim()) return;
 
     // safety, ensure storypoint is a number
-    const storyPointNumber = typeof storyPoint === "string" ? parseInt(storyPoint, 10) : storyPoint;
+    const storyPointNumber =
+      typeof storyPoint === "string" ? parseInt(storyPoint, 10) : storyPoint;
 
     try {
       onSubmit(title, description, storyPoint);
@@ -39,8 +40,18 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
       <View style={styles.container}>
         <View style={styles.modal}>
           <Text>Add Card</Text>
-          <TextInput placeholder="Title" value={title} onChangeText={setTitle} style={styles.input} />
-          <TextInput placeholder="Description" value={description} onChangeText={setDescription} style={styles.input} />
+          <TextInput
+            placeholder="Title"
+            value={title}
+            onChangeText={setTitle}
+            style={styles.input}
+          />
+          <TextInput
+            placeholder="Description"
+            value={description}
+            onChangeText={setDescription}
+            style={styles.input}
+          />
           <Text style={{ marginTop: 10 }}>Story Points:</Text>
           <View style={styles.spShell}>
             <View style={styles.spRow}>
@@ -52,9 +63,18 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
                     onPress={() => setStoryPoint(opt)}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: active }}
-                    style={[styles.spChip, active ? styles.spChipActive : styles.spChipDefault]}
+                    style={[
+                      styles.spChip,
+                      active ? styles.spChipActive : styles.spChipDefault,
+                    ]}
                   >
-                    <Text style={active ? styles.spTextActive : styles.spTextDefault}>{opt}</Text>
+                    <Text
+                      style={
+                        active ? styles.spTextActive : styles.spTextDefault
+                      }
+                    >
+                      {opt}
+                    </Text>
                   </Pressable>
                 );
               })}
