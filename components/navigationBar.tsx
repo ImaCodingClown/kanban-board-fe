@@ -17,7 +17,7 @@ export const NavigationBar: React.FC = () => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
   const handleHomePress = () => {
-    router.push("/teams");
+    router.push("/apps");
   };
 
   const handleBoardPress = () => {
@@ -35,13 +35,9 @@ export const NavigationBar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      const setToken = useAuth.getState().setToken;
-      const setUser = useAuth.getState().setUser;
-      const setSelectedTeam = useAuth.getState().setSelectedTeam;
+      const logout = useAuth.getState().logout;
 
-      setToken(null);
-      setUser(null);
-      setSelectedTeam(undefined);
+      logout();
       setShowProfileDropdown(false);
       router.replace("/login");
     } catch (error) {
