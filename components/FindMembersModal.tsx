@@ -62,7 +62,6 @@ export const FindMembersModal: React.FC<FindMembersModalProps> = ({
     setAddingMember(userToAdd.id);
     try {
       const response = await teamsService.addMember(team.name, {
-        username: userToAdd.username,
         user_id: userToAdd.id,
         role: TeamRole.Collaborator,
       });

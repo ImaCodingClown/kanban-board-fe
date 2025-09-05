@@ -3,7 +3,7 @@ import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useAuth } from "@/store/authStore";
 import { teamsService } from "@/services/teams";
-import { TeamMember } from "@/models/teams";
+import { TeamMemberWithUsername } from "@/models/teams";
 
 type Props = {
   visible: boolean;
@@ -12,7 +12,7 @@ type Props = {
     title: string,
     description: string,
     storyPoint: number,
-    assignee: string,
+    assignee: string
   ) => void;
   columnTitle: string;
 };
@@ -22,7 +22,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const [description, setDescription] = useState("");
   const [storyPoint, setStoryPoint] = useState<number>(0);
   const [assignee, setAssignee] = useState("");
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMemberWithUsername[]>([]);
 
   const selectedTeam = useAuth((state) => state.selectedTeam);
 
@@ -43,7 +43,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
     }
 
     try {
-      const response = await teamsService.getTeam(selectedTeam);
+      const response = await teamsService.getTeamWithUsernames(selectedTeam);
 
       if (response.success && response.team) {
         const members = response.team.members || [];
@@ -111,7 +111,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
             {teamMembers.map((member) => (
               <Picker.Item
                 key={member.user_id}
-                label={`${member.username}`}
+                label={member.username}
                 value={member.username}
               />
             ))}

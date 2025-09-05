@@ -1,6 +1,5 @@
 export interface TeamMember {
   user_id: string;
-  username: string;
   role: TeamRole;
   joined_at: string;
   permissions: string[];
@@ -33,7 +32,6 @@ export interface UpdateTeamPayload {
 }
 
 export interface AddMemberPayload {
-  username: string;
   user_id: string;
   role: TeamRole;
 }
@@ -50,4 +48,29 @@ export interface TeamResponse {
 export interface TeamsResponse {
   success: boolean;
   teams: Team[];
+}
+
+// explicitly for API responses, not stored in the db
+export interface TeamMemberWithUsername {
+  user_id: string;
+  username: string;
+  role: string;
+  joined_at: string;
+  permissions: string[];
+}
+
+export interface TeamWithUsernames {
+  _id?: string;
+  name: string;
+  description?: string;
+  leader_id: string;
+  members: TeamMemberWithUsername[];
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface TeamWithUsernamesResponse {
+  success: boolean;
+  team: TeamWithUsernames;
 }

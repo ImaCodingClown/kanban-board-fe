@@ -5,7 +5,7 @@ import { CardModel } from "../models/board";
 import { editCard } from "@/services/card";
 import { Picker } from "@react-native-picker/picker";
 import { teamsService } from "@/services/teams";
-import { TeamMember } from "@/models/teams";
+import { TeamMemberWithUsername } from "@/models/teams";
 
 type Props = {
   visible: boolean;
@@ -15,7 +15,7 @@ type Props = {
     title: string,
     description: string,
     storyPoint: number,
-    assignee: string,
+    assignee: string
   ) => void;
 };
 
@@ -24,7 +24,7 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
   const [description, setDescription] = useState(card.description ?? "");
   const [storyPoint, setStoryPoint] = useState<number>(card.story_point ?? 0);
   const [assignee, setAssignee] = useState("");
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMemberWithUsername[]>([]);
 
   const selectedTeam = useAuth((state) => state.selectedTeam);
 
@@ -50,7 +50,7 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
     }
 
     try {
-      const response = await teamsService.getTeam(selectedTeam);
+      const response = await teamsService.getTeamWithUsernames(selectedTeam);
 
       if (response.success && response.team) {
         const members = response.team.members || [];
