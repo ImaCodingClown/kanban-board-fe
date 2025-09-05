@@ -79,7 +79,7 @@ export const LoginScreen = () => {
           teams: me.teams || [],
         });
 
-        router.replace("/teams");
+        router.replace("/apps");
       } catch (userError: any) {
         setLoginError("Login successful but failed to get user information");
         setLoading(false);

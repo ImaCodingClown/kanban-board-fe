@@ -24,7 +24,7 @@ export default function Index() {
     if (accessToken && user) {
       const isTokenValid = checkTokenExpiry();
       if (isTokenValid) {
-        router.replace("/teams");
+        router.replace("/apps");
       } else {
         logout();
         router.replace("/login");
