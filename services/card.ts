@@ -5,12 +5,14 @@ export const addCard = async ({
   description,
   columnTitle,
   storyPoint,
+  assignee,
   team,
 }: {
   title: string;
   description?: string;
   columnTitle: string;
   storyPoint: number;
+  assignee: string;
   team: string;
 }) => {
   const response = await api.post("/v1/card", {
@@ -18,6 +20,7 @@ export const addCard = async ({
     description,
     column_name: columnTitle,
     story_point: storyPoint,
+    assignee,
     team,
   });
 
@@ -54,6 +57,7 @@ export const editCard = async ({
   description,
   columnTitle,
   storyPoint,
+  assignee,
   team,
 }: {
   cardId: string;
@@ -61,6 +65,7 @@ export const editCard = async ({
   description: string;
   columnTitle: string;
   storyPoint: number;
+  assignee: string;
   team: string;
 }) => {
   const response = await api.post("/v1/card/edit", {
@@ -69,6 +74,7 @@ export const editCard = async ({
     description,
     column_name: columnTitle,
     story_point: storyPoint,
+    assignee,
     team,
   });
 

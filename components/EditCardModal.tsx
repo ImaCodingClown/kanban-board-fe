@@ -3,36 +3,83 @@ import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { useAuth } from "@/store/authStore";
 import { CardModel } from "../models/board";
 import { editCard } from "@/services/card";
+import { Picker } from "@react-native-picker/picker";
+import { teamsService } from "@/services/teams";
+import { TeamMemberWithUsername } from "@/models/teams";
 import { Pressable } from "react-native";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   card: CardModel & { columnTitle: string };
-  onSuccess?: (title: string, description: string, storyPoint: number) => void;
+  onSuccess?: (
+    title: string,
+    description: string,
+    storyPoint: number,
+    assignee: string,
+  ) => void;
 };
 
 export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description ?? "");
   const [storyPoint, setStoryPoint] = useState<number>(card.story_point ?? 0);
+  const [assignee, setAssignee] = useState("");
+  const [teamMembers, setTeamMembers] = useState<TeamMemberWithUsername[]>([]);
 
-  const team = useAuth.getState().user?.teams?.[0];
+  const selectedTeam = useAuth((state) => state.selectedTeam);
 
   useEffect(() => {
     if (card) {
       setTitle(card.title);
       setDescription(card.description ?? "");
       setStoryPoint(card.story_point ?? 0);
+      setAssignee(card.assignee ?? "");
     }
   }, [card]);
 
+  useEffect(() => {
+    if (visible && selectedTeam) {
+      loadTeamMembers();
+    }
+  }, [visible, selectedTeam]);
+
+  const loadTeamMembers = async () => {
+    if (!selectedTeam) {
+      console.log("No selected team to load members for");
+      return;
+    }
+
+    try {
+      const response = await teamsService.getTeamWithUsernames(selectedTeam);
+
+      if (response.success && response.team) {
+        const members = response.team.members || [];
+
+        setTeamMembers(members);
+
+        if (
+          assignee &&
+          members.length > 0 &&
+          !members.some((member) => member.username === assignee)
+        ) {
+          setAssignee("");
+        }
+      } else {
+        setTeamMembers([]);
+      }
+    } catch (error: any) {
+      console.error("Failed to load team members:", error);
+
+      if (error.response?.status === 401) {
+        console.log("Authentication error");
+      }
+      setTeamMembers([]);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!title.trim()) return;
-
-    // safety
-    const storyPointNumber =
-      typeof storyPoint === "string" ? parseInt(storyPoint, 10) : storyPoint;
 
     try {
       await editCard({
@@ -41,10 +88,11 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
         description,
         columnTitle: card.columnTitle,
         storyPoint,
-        team: team!,
+        assignee,
+        team: selectedTeam!,
       });
 
-      onSuccess?.(title, description, storyPoint);
+      onSuccess?.(title, description, storyPoint, assignee);
       onClose();
     } catch (error) {
       console.error("Failed to edit card:", error);
@@ -71,6 +119,21 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
             onChangeText={setDescription}
             style={styles.input}
           />
+          <Text style={styles.label}>Assignee:</Text>
+          <Picker
+            selectedValue={assignee}
+            onValueChange={(value) => setAssignee(value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="No assignee" value="" />
+            {teamMembers.map((member) => (
+              <Picker.Item
+                key={member.user_id}
+                label={`${member.username} (${member.role})`}
+                value={member.username}
+              />
+            ))}
+          </Picker>
           <Text style={{ marginTop: 10 }}>Story Points:</Text>
           <View style={styles.spShell}>
             <View style={styles.spRow}>
@@ -149,6 +212,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginTop: 10,
+    marginBottom: 5,
+    color: "#000",
   },
   spChipDefault: { backgroundColor: "#fff", borderColor: "#e5e5e5" },
   spChipActive: { backgroundColor: "#2563eb", borderColor: "#1d4ed8" },

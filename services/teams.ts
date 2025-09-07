@@ -6,6 +6,7 @@ import {
   RemoveMemberPayload,
   TeamResponse,
   TeamsResponse,
+  TeamWithUsernamesResponse,
 } from "@/models/teams";
 
 export const teamsService = {
@@ -64,6 +65,15 @@ export const teamsService = {
   async deleteTeam(teamName: string): Promise<{ success: boolean }> {
     const response = await api.delete<{ success: boolean }>(
       `/teams/${teamName}`,
+    );
+    return response.data;
+  },
+
+  async getTeamWithUsernames(
+    teamName: string,
+  ): Promise<TeamWithUsernamesResponse> {
+    const response = await api.get<TeamWithUsernamesResponse>(
+      `/teams/${teamName}/with-usernames`,
     );
     return response.data;
   },
