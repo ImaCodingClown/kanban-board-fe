@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Modal, View, Text, TextInput, Button, StyleSheet, Pressable } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Pressable,
+} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useAuth } from "@/store/authStore";
 import { teamsService } from "@/services/teams";
@@ -109,15 +117,15 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
             selectedValue={assignee}
             onValueChange={(value) => setAssignee(value)}
             style={styles.picker}
-          >
-            <Picker.Item label="No assignee" value="" />
-            {teamMembers.map((member) => (
-              <Picker.Item
-                key={member.user_id}
-                label={member.username}
-                value={member.username}
-              />
-            ))}
+          />
+          <Picker.Item label="No assignee" value="" />
+          {teamMembers.map((member) => (
+            <Picker.Item
+              key={member.user_id}
+              label={member.username}
+              value={member.username}
+            />
+          ))}
           <Text style={{ marginTop: 10 }}>Story Points:</Text>
           <View style={styles.spShell}>
             <View style={styles.spRow}>
@@ -218,4 +226,8 @@ const styles = StyleSheet.create({
   spChipActive: { backgroundColor: "#2563eb", borderColor: "#1d4ed8" },
   spTextDefault: { color: "#111827", fontWeight: "600" },
   spTextActive: { color: "#fff", fontWeight: "700" },
+  picker: {
+    marginVertical: 10,
+    backgroundColor: "#f2f2f2",
+  },
 });
