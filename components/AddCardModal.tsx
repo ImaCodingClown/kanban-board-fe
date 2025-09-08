@@ -117,15 +117,16 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
             selectedValue={assignee}
             onValueChange={(value) => setAssignee(value)}
             style={styles.picker}
-          />
-          <Picker.Item label="No assignee" value="" />
-          {teamMembers.map((member) => (
-            <Picker.Item
-              key={member.user_id}
-              label={member.username}
-              value={member.username}
-            />
-          ))}
+          >
+            <Picker.Item label="No assignee" value="" />
+            {teamMembers.map((member) => (
+              <Picker.Item
+                key={member.user_id}
+                label={member.username}
+                value={member.username}
+              />
+            ))}
+          </Picker>
           <Text style={{ marginTop: 10 }}>Story Points:</Text>
           <View style={styles.spShell}>
             <View style={styles.spRow}>

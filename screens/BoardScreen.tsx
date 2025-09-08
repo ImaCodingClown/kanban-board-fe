@@ -261,6 +261,7 @@ export const BoardScreen = () => {
                   title: title,
                   description: description,
                   story_point: storyPoint,
+                  assignee: assignee,
                 }
               : card,
           );
