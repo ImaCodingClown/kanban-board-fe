@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -33,13 +33,7 @@ export const FindMembersModal: React.FC<FindMembersModalProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [addingMember, setAddingMember] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (visible && team) {
-      loadAllUsers();
-    }
-  }, [visible, team]);
-
-  const loadAllUsers = async () => {
+  const loadAllUsers = useCallback(async () => {
     try {
       const response = await usersService.getAllUsers();
       if (response.success) {
@@ -54,7 +48,13 @@ export const FindMembersModal: React.FC<FindMembersModalProps> = ({
     } catch (error) {
       console.error("Failed to load users:", error);
     }
-  };
+  }, [team]);
+
+  useEffect(() => {
+    if (visible && team) {
+      loadAllUsers();
+    }
+  }, [visible, team, loadAllUsers]);
 
   const handleAddMember = async (userToAdd: User) => {
     if (!team) return;

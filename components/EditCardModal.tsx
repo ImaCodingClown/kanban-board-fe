@@ -1,5 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { Modal, View, Text, TextInput, Button, StyleSheet } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { useAuth } from "@/store/authStore";
 import { CardModel } from "../models/board";
 import { editCard } from "@/services/card";
@@ -29,22 +36,7 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
 
   const selectedTeam = useAuth((state) => state.selectedTeam);
 
-  useEffect(() => {
-    if (card) {
-      setTitle(card.title);
-      setDescription(card.description ?? "");
-      setStoryPoint(card.story_point ?? 0);
-      setAssignee(card.assignee ?? "");
-    }
-  }, [card]);
-
-  useEffect(() => {
-    if (visible && selectedTeam) {
-      loadTeamMembers();
-    }
-  }, [visible, selectedTeam]);
-
-  const loadTeamMembers = async () => {
+  const loadTeamMembers = useCallback(async () => {
     if (!selectedTeam) {
       console.log("No selected team to load members for");
       return;
@@ -76,7 +68,22 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
       }
       setTeamMembers([]);
     }
-  };
+  }, [selectedTeam, assignee]);
+
+  useEffect(() => {
+    if (card) {
+      setTitle(card.title);
+      setDescription(card.description ?? "");
+      setStoryPoint(card.story_point ?? 0);
+      setAssignee(card.assignee ?? "");
+    }
+  }, [card]);
+
+  useEffect(() => {
+    if (visible && selectedTeam) {
+      loadTeamMembers();
+    }
+  }, [visible, selectedTeam, loadTeamMembers]);
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
@@ -162,8 +169,17 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
               })}
             </View>
           </View>
-          <Button title="Save Changes" onPress={handleSubmit} />
-          <Button title="Cancel" onPress={onClose} />
+          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>Save Changes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.cancelButton]}
+            onPress={onClose}
+          >
+            <Text style={[styles.buttonText, styles.cancelButtonText]}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -227,5 +243,24 @@ const styles = StyleSheet.create({
   picker: {
     marginVertical: 10,
     backgroundColor: "#f2f2f2",
+  },
+  button: {
+    backgroundColor: "#2563eb",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    marginVertical: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelButton: {
+    backgroundColor: "#6b7280",
+  },
+  cancelButtonText: {
+    color: "#fff",
   },
 });
