@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, View, Text, Button, StyleSheet } from "react-native";
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
 type Props = {
   visible: boolean;
@@ -33,16 +33,18 @@ export const ConfirmDeleteModal = ({
           <Text style={styles.message}>{message}</Text>
 
           <View style={styles.buttonContainer}>
-            <View style={styles.buttonWrapper}>
-              <Button title={cancelText} onPress={onClose} color="#666" />
-            </View>
-            <View style={styles.buttonWrapper}>
-              <Button
-                title={confirmText}
-                onPress={handleConfirm}
-                color="#ff4444"
-              />
-            </View>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={onClose}
+            >
+              <Text style={styles.cancelButtonText}>{cancelText}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.confirmButton]}
+              onPress={handleConfirm}
+            >
+              <Text style={styles.confirmButtonText}>{confirmText}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -81,7 +83,27 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10,
   },
-  buttonWrapper: {
+  button: {
     flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#6b7280",
+  },
+  confirmButton: {
+    backgroundColor: "#ef4444",
+  },
+  cancelButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  confirmButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

@@ -1,5 +1,5 @@
 import { DraxProvider, DraxView } from "react-native-drax";
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -261,6 +261,7 @@ export const BoardScreen = () => {
                   title: title,
                   description: description,
                   story_point: storyPoint,
+                  assignee: assignee,
                 }
               : card,
           );
@@ -337,7 +338,7 @@ export const BoardScreen = () => {
                       receptive={false}
                       draggable
                     >
-                      <Text
+                      <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() =>
                           confirmDeleteCard(
@@ -347,17 +348,17 @@ export const BoardScreen = () => {
                           )
                         }
                       >
-                        ❌
-                      </Text>
-                      <Text
+                        <Text style={styles.deleteButtonText}>❌</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
                         style={styles.editButton}
                         onPress={() => {
                           setEditingCard({ ...card, columnTitle: col.title });
                           setEditModalVisible(true);
                         }}
                       >
-                        edit
-                      </Text>
+                        <Text style={styles.editButtonText}>edit</Text>
+                      </TouchableOpacity>
                       <Text style={styles.cardTitle}>{card.title}</Text>
                       {card.description && (
                         <Text style={styles.cardDescription}>
@@ -534,17 +535,23 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 4,
     right: 6,
-    fontSize: 16,
-    color: "red",
     zIndex: 1,
+    padding: 4,
   },
   editButton: {
     position: "absolute",
     bottom: 4,
     right: 6,
+    zIndex: 1,
+    padding: 4,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    color: "red",
+  },
+  editButtonText: {
     fontSize: 12,
     color: "grey",
-    zIndex: 1,
   },
   storyPoint: {
     fontWeight: "bold",

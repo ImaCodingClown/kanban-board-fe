@@ -7,15 +7,12 @@ import {
   StyleSheet,
   Image,
   TextInput as RNTextInput,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
 import { useRouter } from "expo-router";
-
-const { width } = Dimensions.get("window");
 
 export const SignUpScreen = () => {
   const [username, setUsername] = useState("");
@@ -101,7 +98,7 @@ export const SignUpScreen = () => {
         });
 
         router.replace("/teams");
-      } catch (userError: any) {
+      } catch (error: any) {
         setSignupError("Signup successful but failed to get user information");
         setLoading(false);
         return;

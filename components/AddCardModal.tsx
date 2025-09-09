@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Modal,
   View,
   Text,
   TextInput,
-  Button,
+  TouchableOpacity,
   StyleSheet,
   Pressable,
 } from "react-native";
@@ -34,17 +34,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
 
   const selectedTeam = useAuth((state) => state.selectedTeam);
 
-  useEffect(() => {
-    if (visible && selectedTeam) {
-      loadTeamMembers();
-    }
-  }, [visible, selectedTeam]);
-
-  useEffect(() => {
-    setAssignee("");
-  }, [selectedTeam]);
-
-  const loadTeamMembers = async () => {
+  const loadTeamMembers = useCallback(async () => {
     if (!selectedTeam) {
       console.log("No selected team to load members for");
       return;
@@ -74,7 +64,17 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
       }
       setTeamMembers([]);
     }
-  };
+  }, [selectedTeam, assignee]);
+
+  useEffect(() => {
+    if (visible && selectedTeam) {
+      loadTeamMembers();
+    }
+  }, [visible, selectedTeam, loadTeamMembers]);
+
+  useEffect(() => {
+    setAssignee("");
+  }, [selectedTeam]);
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
@@ -117,15 +117,16 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
             selectedValue={assignee}
             onValueChange={(value) => setAssignee(value)}
             style={styles.picker}
-          />
-          <Picker.Item label="No assignee" value="" />
-          {teamMembers.map((member) => (
-            <Picker.Item
-              key={member.user_id}
-              label={member.username}
-              value={member.username}
-            />
-          ))}
+          >
+            <Picker.Item label="No assignee" value="" />
+            {teamMembers.map((member) => (
+              <Picker.Item
+                key={member.user_id}
+                label={member.username}
+                value={member.username}
+              />
+            ))}
+          </Picker>
           <Text style={{ marginTop: 10 }}>Story Points:</Text>
           <View style={styles.spShell}>
             <View style={styles.spRow}>
@@ -154,8 +155,17 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
               })}
             </View>
           </View>
-          <Button title="Add Card" onPress={handleSubmit} />
-          <Button title="Cancel" onPress={onClose} />
+          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>Add Card</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.cancelButton]}
+            onPress={onClose}
+          >
+            <Text style={[styles.buttonText, styles.cancelButtonText]}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -229,5 +239,24 @@ const styles = StyleSheet.create({
   picker: {
     marginVertical: 10,
     backgroundColor: "#f2f2f2",
+  },
+  button: {
+    backgroundColor: "#2563eb",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    marginVertical: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelButton: {
+    backgroundColor: "#6b7280",
+  },
+  cancelButtonText: {
+    color: "#fff",
   },
 });
