@@ -16,7 +16,7 @@ type Props = {
     title: string,
     description: string,
     storyPoint: number,
-    assignee: string,
+    assignee: string
   ) => void;
 };
 
@@ -224,4 +224,8 @@ const styles = StyleSheet.create({
   spChipActive: { backgroundColor: "#2563eb", borderColor: "#1d4ed8" },
   spTextDefault: { color: "#111827", fontWeight: "600" },
   spTextActive: { color: "#fff", fontWeight: "700" },
+  picker: {
+    marginVertical: 10,
+    backgroundColor: "#f2f2f2",
+  },
 });

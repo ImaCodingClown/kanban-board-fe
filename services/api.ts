@@ -8,9 +8,7 @@ declare module "axios" {
 }
 
 export const api = axios.create({
-  baseURL: "https://kanban-board-be.onrender.com", // your Rust backend
-
-  // baseURL: "http://localhost:8080", // for local development
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   timeout: 5000,
 });
 
@@ -53,7 +51,7 @@ api.interceptors.request.use(
   (error) => {
     console.log("error inside api");
     return Promise.reject(error);
-  },
+  }
 );
 
 api.interceptors.response.use(
@@ -61,7 +59,7 @@ api.interceptors.response.use(
   (error) => {
     console.error("API Error:", error.response?.status, error.config?.url);
     return Promise.reject(error);
-  },
+  }
 );
 
 api.interceptors.response.use(
@@ -104,7 +102,7 @@ api.interceptors.response.use(
       const delay = calculateRetryDelay(originalRequest._retryCount);
 
       console.log(
-        `Retrying request (${originalRequest._retryCount}/${RETRY_CONFIG.maxRetries}) after ${delay}ms`,
+        `Retrying request (${originalRequest._retryCount}/${RETRY_CONFIG.maxRetries}) after ${delay}ms`
       );
 
       return new Promise((resolve) => {
@@ -122,7 +120,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export const checkNetworkStatus = async (): Promise<boolean> => {
