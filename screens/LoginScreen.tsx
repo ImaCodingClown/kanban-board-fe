@@ -7,15 +7,12 @@ import {
   StyleSheet,
   Image,
   TextInput as RNTextInput,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import { api } from "../services/api";
 import { useAuth } from "../store/authStore";
 import { useRouter } from "expo-router";
-
-const { width } = Dimensions.get("window");
 
 export const LoginScreen = () => {
   const [userOrEmail, setUserOrEmail] = useState("");
@@ -80,7 +77,7 @@ export const LoginScreen = () => {
         });
 
         router.replace("/apps");
-      } catch (userError: any) {
+      } catch (error: any) {
         setLoginError("Login successful but failed to get user information");
         setLoading(false);
         return;
@@ -111,14 +108,6 @@ export const LoginScreen = () => {
     }
 
     setLoading(false);
-  };
-
-  const clearFieldError = (field: string) => {
-    if (field === "userOrEmail") {
-      setUserOrEmailError("");
-    } else if (field === "password") {
-      setPasswordError("");
-    }
   };
 
   const handleInputChange = (field: string, text: string) => {

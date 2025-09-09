@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -61,40 +60,29 @@ export const TeamsScreen = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (accessToken && user) {
-      const isTokenValid = checkTokenExpiry();
-      if (isTokenValid) {
-        loadTeams();
-      } else {
-        logout();
-        router.replace("/login");
-      }
-    } else {
-      setLoading(false);
-    }
-  }, [accessToken, user, checkTokenExpiry, logout, router]);
+  const showToast = useCallback(
+    (
+      message: string,
+      type: "success" | "error" | "warning" | "info",
+      onRetry?: () => void,
+      retryAfter?: number,
+    ) => {
+      setToast({
+        visible: true,
+        message,
+        type,
+        onRetry,
+        retryAfter,
+      });
+    },
+    [],
+  );
 
-  const showToast = (
-    message: string,
-    type: "success" | "error" | "warning" | "info",
-    onRetry?: () => void,
-    retryAfter?: number,
-  ) => {
-    setToast({
-      visible: true,
-      message,
-      type,
-      onRetry,
-      retryAfter,
-    });
-  };
-
-  const hideToast = () => {
+  const hideToast = useCallback(() => {
     setToast((prev) => ({ ...prev, visible: false }));
-  };
+  }, []);
 
-  const loadTeams = async () => {
+  const loadTeams = useCallback(async () => {
     if (!user || !accessToken) {
       setLoading(false);
       return;
@@ -132,7 +120,21 @@ export const TeamsScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, accessToken, logout, router, showToast]);
+
+  useEffect(() => {
+    if (accessToken && user) {
+      const isTokenValid = checkTokenExpiry();
+      if (isTokenValid) {
+        loadTeams();
+      } else {
+        logout();
+        router.replace("/login");
+      }
+    } else {
+      setLoading(false);
+    }
+  }, [accessToken, user, checkTokenExpiry, logout, router, loadTeams]);
 
   const handleFindMembers = (team: Team) => {
     setSelectedTeamForMembers(team);
