@@ -14,6 +14,7 @@ export const addCard = async ({
   storyPoint: number;
   assignee: string;
   team: string;
+  priority: "LOW" | "MEDIUM" | "HIGH";
 }) => {
   const response = await api.post("/v1/card", {
     title,
@@ -22,6 +23,7 @@ export const addCard = async ({
     story_point: storyPoint,
     assignee,
     team,
+    priority,
   });
 
   return response.data;
@@ -59,6 +61,7 @@ export const editCard = async ({
   storyPoint,
   assignee,
   team,
+  priority,
 }: {
   cardId: string;
   title: string;
@@ -67,6 +70,7 @@ export const editCard = async ({
   storyPoint: number;
   assignee: string;
   team: string;
+  priority: "LOW" | "MEDIUM" | "HIGH";
 }) => {
   const response = await api.post("/v1/card/edit", {
     card_id: cardId,
@@ -76,6 +80,7 @@ export const editCard = async ({
     story_point: storyPoint,
     assignee,
     team,
+    priority,
   });
 
   return response.data;

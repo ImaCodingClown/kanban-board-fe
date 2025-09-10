@@ -149,6 +149,7 @@ export const BoardScreen = () => {
     description: string,
     storyPoint: number,
     assignee: string,
+    priority: "LOW" | "MEDIUM" | "HIGH",
   ) => {
     if (!selectedTeam) {
       console.error("No team selected.");
@@ -163,6 +164,7 @@ export const BoardScreen = () => {
         storyPoint,
         assignee,
         team: selectedTeam,
+        priority,
       });
       setColumns((prevColumns) => {
         const newColumns = prevColumns.map((column) => {
@@ -236,6 +238,7 @@ export const BoardScreen = () => {
     description: string,
     storyPoint: number,
     assignee: string,
+    priority: "LOW" | "MEDIUM" | "HIGH",
   ) => {
     if (!editingCard || !selectedTeam) return;
 
@@ -248,6 +251,7 @@ export const BoardScreen = () => {
         storyPoint: storyPoint,
         assignee,
         team: selectedTeam,
+        priority,
       });
 
       setColumns((prevColumns) =>
@@ -262,6 +266,7 @@ export const BoardScreen = () => {
                   description: description,
                   story_point: storyPoint,
                   assignee: assignee,
+                  priority: priority,
                 }
               : card,
           );
@@ -374,6 +379,20 @@ export const BoardScreen = () => {
                             Story Point: {card.story_point}
                           </Text>
                         )}
+                      {card.priority && (
+                        <Text
+                          style={[
+                            styles.priorityText,
+                            card.priority === "HIGH"
+                              ? styles.prHighText
+                              : card.priority === "MEDIUM"
+                                ? styles.prMedText
+                                : styles.prLowText,
+                          ]}
+                        >
+                          Priority: {card.priority}
+                        </Text>
+                      )}
                     </DraxView>
                   ))}
                 </ScrollView>
@@ -580,4 +599,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 16,
   },
+  priorityText: {
+    marginTop: 4,
+    fontWeight: "700",
+  },
+  prLowText: { color: "#16a34a" },
+  prMedText: { color: "#d97706" },
+  prHighText: { color: "#dc2626" },
 });
