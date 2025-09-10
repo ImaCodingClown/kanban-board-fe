@@ -7,6 +7,7 @@ export const addCard = async ({
   storyPoint,
   assignee,
   team,
+  priority,
 }: {
   title: string;
   description?: string;
