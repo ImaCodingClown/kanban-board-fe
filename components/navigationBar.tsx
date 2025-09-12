@@ -17,7 +17,7 @@ export const NavigationBar: React.FC = () => {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
   const handleHomePress = () => {
-    router.push("/apps");
+    router.push("/apps" as any);
   };
 
   const handleBoardPress = () => {
