@@ -8,9 +8,7 @@ declare module "axios" {
 }
 
 export const api = axios.create({
-  baseURL: "https://kanban-board-be.onrender.com", // your Rust backend
-
-  //baseURL: "http://localhost:8080", // for local development
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   timeout: 5000,
 });
 

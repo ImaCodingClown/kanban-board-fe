@@ -44,3 +44,6 @@ coverage/
 
 # backend build files
 backend/
+
+# allow
+!.env.example
