@@ -208,8 +208,8 @@ export const TeamsScreen = () => {
   };
 
   const confirmDeleteTeam = (team: Team) => {
-    if (team.name === "LJY Members") {
-      showToast("LJY Members team cannot be deleted.", "warning");
+    if (team.name === "LJY Soft") {
+      showToast("LJY Soft team cannot be deleted.", "warning");
       return;
     }
     setTeamToDelete(team);
@@ -295,7 +295,7 @@ export const TeamsScreen = () => {
               <Ionicons name="person-add-outline" size={20} color="#007AFF" />
             </TouchableOpacity>
           )}
-          {item.name !== "LJY Members" && isUserTeamLeader(item) && (
+          {item.name !== "LJY Soft" && isUserTeamLeader(item) && (
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={(e) => {

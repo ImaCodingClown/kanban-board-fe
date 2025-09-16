@@ -88,7 +88,7 @@ export const SignUpScreen = () => {
         }
 
         const userTeams =
-          me.teams && me.teams.length > 0 ? me.teams : ["LJY Members"];
+          me.teams && me.teams.length > 0 ? me.teams : ["LJY Soft"];
 
         setUser({
           id: me.id,
