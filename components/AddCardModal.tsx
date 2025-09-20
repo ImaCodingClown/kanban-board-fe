@@ -21,6 +21,7 @@ type Props = {
     description: string,
     storyPoint: number,
     assignee: string,
+    priority: "LOW" | "MEDIUM" | "HIGH",
   ) => void;
   columnTitle: string;
 };
@@ -30,6 +31,7 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
   const [description, setDescription] = useState("");
   const [storyPoint, setStoryPoint] = useState<number>(0);
   const [assignee, setAssignee] = useState("");
+  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
   const [teamMembers, setTeamMembers] = useState<TeamMemberWithUsername[]>([]);
 
   const selectedTeam = useAuth((state) => state.selectedTeam);
@@ -80,11 +82,12 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
     if (!title.trim()) return;
 
     try {
-      onSubmit(title, description, storyPoint, assignee);
+      onSubmit(title, description, storyPoint, assignee, priority);
       setTitle("");
       setDescription("");
       setStoryPoint(0);
       setAssignee("");
+      setPriority("MEDIUM");
       onClose();
     } catch (error) {
       console.error("Error adding card:", error);
@@ -149,6 +152,39 @@ export const AddCardModal = ({ visible, onClose, onSubmit }: Props) => {
                       }
                     >
                       {opt}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+          <Text style={styles.label}>Priority:</Text>
+          <View style={styles.spShell}>
+            <View style={styles.spRow}>
+              {(["LOW", "MEDIUM", "HIGH"] as const).map((p) => {
+                const active = priority === p;
+                return (
+                  <Pressable
+                    key={p}
+                    onPress={() => setPriority(p)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    style={[
+                      styles.spChip,
+                      active &&
+                        (p === "LOW"
+                          ? styles.prLow
+                          : p === "MEDIUM"
+                            ? styles.prMed
+                            : styles.prHigh),
+                    ]}
+                  >
+                    <Text
+                      style={
+                        active ? styles.spTextActive : styles.spTextDefault
+                      }
+                    >
+                      {p}
                     </Text>
                   </Pressable>
                 );
@@ -240,6 +276,9 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     backgroundColor: "#f2f2f2",
   },
+  prLow: { backgroundColor: "#22c55e", borderColor: "#16a34a" },
+  prMed: { backgroundColor: "#f59e0b", borderColor: "#d97706" },
+  prHigh: { backgroundColor: "#ef4444", borderColor: "#dc2626" },
   button: {
     backgroundColor: "#2563eb",
     paddingVertical: 12,

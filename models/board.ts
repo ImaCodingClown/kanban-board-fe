@@ -5,7 +5,7 @@ export interface CardModel {
   description?: string;
   assignee?: string;
   story_point?: number;
-  priority?: string;
+  priority?: "LOW" | "MEDIUM" | "HIGH";
 }
 
 export interface ColumnModel {

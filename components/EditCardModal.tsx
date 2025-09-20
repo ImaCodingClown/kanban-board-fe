@@ -18,12 +18,16 @@ import { Pressable } from "react-native";
 type Props = {
   visible: boolean;
   onClose: () => void;
-  card: CardModel & { columnTitle: string };
+  card: CardModel & {
+    columnTitle: string;
+    priority?: "LOW" | "MEDIUM" | "HIGH";
+  };
   onSuccess?: (
     title: string,
     description: string,
     storyPoint: number,
     assignee: string,
+    priority: "LOW" | "MEDIUM" | "HIGH",
   ) => void;
 };
 
@@ -32,6 +36,9 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
   const [description, setDescription] = useState(card.description ?? "");
   const [storyPoint, setStoryPoint] = useState<number>(card.story_point ?? 0);
   const [assignee, setAssignee] = useState("");
+  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(
+    card.priority ?? "MEDIUM",
+  );
   const [teamMembers, setTeamMembers] = useState<TeamMemberWithUsername[]>([]);
 
   const selectedTeam = useAuth((state) => state.selectedTeam);
@@ -76,6 +83,7 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
       setDescription(card.description ?? "");
       setStoryPoint(card.story_point ?? 0);
       setAssignee(card.assignee ?? "");
+      setPriority(card.priority ?? "MEDIUM");
     }
   }, [card]);
 
@@ -96,10 +104,11 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
         columnTitle: card.columnTitle,
         storyPoint,
         assignee,
+        priority,
         team: selectedTeam!,
       });
 
-      onSuccess?.(title, description, storyPoint, assignee);
+      onSuccess?.(title, description, storyPoint, assignee, priority);
       onClose();
     } catch (error) {
       console.error("Failed to edit card:", error);
@@ -163,6 +172,39 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
                       }
                     >
                       {opt}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+          <Text style={styles.label}>Priority:</Text>
+          <View style={styles.spShell}>
+            <View style={styles.spRow}>
+              {(["LOW", "MEDIUM", "HIGH"] as const).map((p) => {
+                const active = priority === p;
+                return (
+                  <Pressable
+                    key={p}
+                    onPress={() => setPriority(p)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    style={[
+                      styles.spChip,
+                      active &&
+                        (p === "LOW"
+                          ? styles.prLow
+                          : p === "MEDIUM"
+                            ? styles.prMed
+                            : styles.prHigh),
+                    ]}
+                  >
+                    <Text
+                      style={
+                        active ? styles.spTextActive : styles.spTextDefault
+                      }
+                    >
+                      {p}
                     </Text>
                   </Pressable>
                 );
@@ -244,6 +286,9 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     backgroundColor: "#f2f2f2",
   },
+  prLow: { backgroundColor: "#22c55e", borderColor: "#16a34a" },
+  prMed: { backgroundColor: "#f59e0b", borderColor: "#d97706" },
+  prHigh: { backgroundColor: "#ef4444", borderColor: "#dc2626" },
   button: {
     backgroundColor: "#2563eb",
     paddingVertical: 12,
