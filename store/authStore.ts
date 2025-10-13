@@ -17,6 +17,7 @@ interface AuthState {
   tokenExpiry: number | null;
   setTokens: (accessToken: string, refreshToken: string) => void;
   setUser: (user: User | null) => void;
+  updateUserSlackId: (slackUserId: string) => void;
   setSelectedTeam: (team: string | undefined) => void;
   getSelectedTeam: () => string | undefined;
   logout: () => void;
@@ -51,6 +52,17 @@ export const useAuth = create<AuthState>()(
         }
       },
       setUser: (user) => set({ user }),
+      updateUserSlackId: (slackUserId) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({
+            user: {
+              ...currentUser,
+              slack_user_id: slackUserId,
+            },
+          });
+        }
+      },
       setSelectedTeam: (team) => set({ selectedTeam: team }),
       getSelectedTeam: () => get().selectedTeam,
       logout: () =>

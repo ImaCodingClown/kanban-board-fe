@@ -41,24 +41,45 @@ export const ProfileScreen = () => {
   }, [user?.email]);
 
   const handleSaveSlackId = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      Alert.alert("Error", "User not found. Please log in again.");
+      return;
+    }
+
+    if (!slackUserId.trim()) {
+      Alert.alert("Error", "Please enter a Slack User ID.");
+      return;
+    }
 
     try {
       setSavingSlackId(true);
+
+      // Convert user ID to string if it's an object
+      const userIdString =
+        typeof user.id === "object" && user.id && "$oid" in user.id
+          ? (user.id as any).$oid
+          : String(user.id);
+
       const response = await usersService.updateSlackUserId(
-        user.id,
+        userIdString,
         slackUserId,
       );
 
       if (response.success) {
         Alert.alert("Success", "Slack ID updated successfully!");
         setIsEditingSlackId(false);
-        // Update the user in auth store if needed
-        // You might want to update the auth store with the new user data
+
+        // Update the user in auth store
+        useAuth.getState().updateUserSlackId(slackUserId);
+      } else {
+        Alert.alert("Error", "Failed to update Slack ID. Please try again.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update Slack ID:", error);
-      Alert.alert("Error", "Failed to update Slack ID. Please try again.");
+      Alert.alert(
+        "Error",
+        `Failed to update Slack ID: ${error.message || "Unknown error"}`,
+      );
     } finally {
       setSavingSlackId(false);
     }
