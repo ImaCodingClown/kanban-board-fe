@@ -1,14 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/store/authStore";
+import { useAuth, User } from "@/store/authStore";
 import { teamsService } from "@/services/teams";
 import { Team } from "@/models/teams";
+import { usersService } from "@/services/users";
 
 export const ProfileScreen = () => {
   const user = useAuth((state) => state.user);
   const [userTeams, setUserTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
+  const [slackUserId, setSlackUserId] = useState(user?.slack_user_id || "");
+  const [isEditingSlackId, setIsEditingSlackId] = useState(false);
+  const [savingSlackId, setSavingSlackId] = useState(false);
 
   useEffect(() => {
     const fetchUserTeams = async () => {
@@ -27,6 +39,35 @@ export const ProfileScreen = () => {
 
     fetchUserTeams();
   }, [user?.email]);
+
+  const handleSaveSlackId = async () => {
+    if (!user?.id) return;
+
+    try {
+      setSavingSlackId(true);
+      const response = await usersService.updateSlackUserId(
+        user.id,
+        slackUserId,
+      );
+
+      if (response.success) {
+        Alert.alert("Success", "Slack ID updated successfully!");
+        setIsEditingSlackId(false);
+        // Update the user in auth store if needed
+        // You might want to update the auth store with the new user data
+      }
+    } catch (error) {
+      console.error("Failed to update Slack ID:", error);
+      Alert.alert("Error", "Failed to update Slack ID. Please try again.");
+    } finally {
+      setSavingSlackId(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setSlackUserId(user?.slack_user_id || "");
+    setIsEditingSlackId(false);
+  };
 
   if (!user) {
     return (
@@ -62,6 +103,64 @@ export const ProfileScreen = () => {
             <View style={styles.infoContent}>
               <Text style={styles.label}>Email</Text>
               <Text style={styles.value}>{user.email}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.infoRow}>
+            <Ionicons name="logo-slack" size={20} color="#007AFF" />
+            <View style={styles.infoContent}>
+              <Text style={styles.label}>Slack Integration</Text>
+              {isEditingSlackId ? (
+                <View style={styles.slackEditContainer}>
+                  <TextInput
+                    style={styles.slackInput}
+                    value={slackUserId}
+                    onChangeText={setSlackUserId}
+                    placeholder="Enter your Slack User ID (e.g., U01ABC2DEF3)"
+                    placeholderTextColor="#8E8E93"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <View style={styles.slackButtonContainer}>
+                    <TouchableOpacity
+                      style={[styles.slackButton, styles.saveButton]}
+                      onPress={handleSaveSlackId}
+                      disabled={savingSlackId}
+                    >
+                      <Text style={styles.saveButtonText}>
+                        {savingSlackId ? "Saving..." : "Save"}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.slackButton, styles.cancelButton]}
+                      onPress={handleCancelEdit}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.slackDisplayContainer}>
+                  <Text style={styles.value}>
+                    {user.slack_user_id || "Not connected"}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => setIsEditingSlackId(true)}
+                  >
+                    <Text style={styles.editButtonText}>
+                      {user.slack_user_id ? "Edit" : "Connect"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              <Text style={styles.slackHelpText}>
+                Connect your Slack account to receive notifications when
+                assigned to cards. Find your Slack User ID in your Slack profile
+                settings.
+              </Text>
             </View>
           </View>
 
@@ -228,5 +327,69 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#8E8E93",
     fontStyle: "italic",
+  },
+  slackEditContainer: {
+    marginTop: 8,
+  },
+  slackInput: {
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: "#F9F9F9",
+    marginBottom: 12,
+  },
+  slackButtonContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  slackButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveButton: {
+    backgroundColor: "#007AFF",
+  },
+  cancelButton: {
+    backgroundColor: "#F2F2F7",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+  },
+  saveButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelButtonText: {
+    color: "#007AFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  slackDisplayContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  editButton: {
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  editButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  slackHelpText: {
+    fontSize: 12,
+    color: "#8E8E93",
+    marginTop: 8,
+    lineHeight: 16,
   },
 });

@@ -6,6 +6,7 @@ export interface User {
   username: string;
   email: string;
   teams: string[];
+  slack_user_id?: string;
 }
 
 interface AuthState {
