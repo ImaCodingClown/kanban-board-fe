@@ -1,14 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/store/authStore";
+import { useAuth, User } from "@/store/authStore";
 import { teamsService } from "@/services/teams";
 import { Team } from "@/models/teams";
+import { usersService } from "@/services/users";
 
 export const ProfileScreen = () => {
   const user = useAuth((state) => state.user);
   const [userTeams, setUserTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
+  const [slackUserId, setSlackUserId] = useState(user?.slack_user_id || "");
+  const [isEditingSlackId, setIsEditingSlackId] = useState(false);
+  const [savingSlackId, setSavingSlackId] = useState(false);
 
   useEffect(() => {
     const fetchUserTeams = async () => {
@@ -27,6 +39,56 @@ export const ProfileScreen = () => {
 
     fetchUserTeams();
   }, [user?.email]);
+
+  const handleSaveSlackId = async () => {
+    if (!user?.id) {
+      Alert.alert("Error", "User not found. Please log in again.");
+      return;
+    }
+
+    if (!slackUserId.trim()) {
+      Alert.alert("Error", "Please enter a Slack User ID.");
+      return;
+    }
+
+    try {
+      setSavingSlackId(true);
+
+      // Convert user ID to string if it's an object
+      const userIdString =
+        typeof user.id === "object" && user.id && "$oid" in user.id
+          ? (user.id as any).$oid
+          : String(user.id);
+
+      const response = await usersService.updateSlackUserId(
+        userIdString,
+        slackUserId,
+      );
+
+      if (response.success) {
+        Alert.alert("Success", "Slack ID updated successfully!");
+        setIsEditingSlackId(false);
+
+        // Update the user in auth store
+        useAuth.getState().updateUserSlackId(slackUserId);
+      } else {
+        Alert.alert("Error", "Failed to update Slack ID. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Failed to update Slack ID:", error);
+      Alert.alert(
+        "Error",
+        `Failed to update Slack ID: ${error.message || "Unknown error"}`,
+      );
+    } finally {
+      setSavingSlackId(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setSlackUserId(user?.slack_user_id || "");
+    setIsEditingSlackId(false);
+  };
 
   if (!user) {
     return (
@@ -65,8 +127,6 @@ export const ProfileScreen = () => {
             </View>
           </View>
 
-          <View style={styles.divider} />
-
           <View style={styles.infoRow}>
             <Ionicons name="people" size={20} color="#007AFF" />
             <View style={styles.infoContent}>
@@ -93,6 +153,74 @@ export const ProfileScreen = () => {
               )}
             </View>
           </View>
+        </View>
+
+        {/* Slack Integration Card */}
+        <View style={styles.slackCard}>
+          <View style={styles.slackCardHeader}>
+            <Ionicons name="logo-slack" size={24} color="#4A154B" />
+            <Text style={styles.slackCardTitle}>Slack Notifications</Text>
+          </View>
+
+          {isEditingSlackId ? (
+            <View style={styles.slackEditContainer}>
+              <TextInput
+                style={styles.slackInput}
+                value={slackUserId}
+                onChangeText={setSlackUserId}
+                placeholder="Enter your Slack User ID (e.g., U01ABC2DEF3)"
+                placeholderTextColor="#8E8E93"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <View style={styles.slackButtonContainer}>
+                <TouchableOpacity
+                  style={[styles.slackButton, styles.slackSaveButton]}
+                  onPress={handleSaveSlackId}
+                  disabled={savingSlackId}
+                >
+                  <Text style={styles.slackSaveButtonText}>
+                    {savingSlackId ? "Saving..." : "Save"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.slackButton, styles.slackCancelButton]}
+                  onPress={handleCancelEdit}
+                >
+                  <Text style={styles.slackCancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.slackDisplayContainer}>
+              <View style={styles.slackStatusContainer}>
+                <View
+                  style={[
+                    styles.statusIndicator,
+                    user.slack_user_id
+                      ? styles.statusConnected
+                      : styles.statusDisconnected,
+                  ]}
+                />
+                <Text style={styles.slackStatusText}>
+                  {user.slack_user_id ? "Connected" : "Not connected"}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.slackConnectButton}
+                onPress={() => setIsEditingSlackId(true)}
+              >
+                <Text style={styles.slackConnectButtonText}>
+                  {user.slack_user_id ? "Edit" : "Connect"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <Text style={styles.slackHelpText}>
+            Get notified in Slack when you're assigned to cards. Find your User
+            ID in Slack profile settings.
+          </Text>
         </View>
       </View>
     </ScrollView>
@@ -228,5 +356,150 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#8E8E93",
     fontStyle: "italic",
+  },
+  slackEditContainer: {
+    marginTop: 8,
+  },
+  slackInput: {
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: "#F9F9F9",
+    marginBottom: 12,
+  },
+  slackButtonContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  slackButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveButton: {
+    backgroundColor: "#007AFF",
+  },
+  cancelButton: {
+    backgroundColor: "#F2F2F7",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+  },
+  saveButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelButtonText: {
+    color: "#007AFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  slackDisplayContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  editButton: {
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  editButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  slackHelpText: {
+    fontSize: 12,
+    color: "#8E8E93",
+    marginTop: 8,
+    lineHeight: 16,
+  },
+  slackStatusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  statusConnected: {
+    backgroundColor: "#34C759",
+  },
+  statusDisconnected: {
+    backgroundColor: "#FF3B30",
+  },
+  slackStatusText: {
+    fontSize: 16,
+    color: "#000",
+    fontWeight: "500",
+  },
+  slackCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 20,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: "#4A154B",
+  },
+  slackCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  slackCardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000",
+    marginLeft: 12,
+  },
+  slackConnectButton: {
+    backgroundColor: "#4A154B",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    shadowColor: "#4A154B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  slackConnectButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  slackSaveButton: {
+    backgroundColor: "#4A154B",
+  },
+  slackSaveButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  slackCancelButton: {
+    backgroundColor: "#F2F2F7",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+  },
+  slackCancelButtonText: {
+    color: "#4A154B",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

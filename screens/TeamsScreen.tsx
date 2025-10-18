@@ -41,6 +41,10 @@ export const TeamsScreen = () => {
   const [findMembersModalVisible, setFindMembersModalVisible] = useState(false);
   const [selectedTeamForMembers, setSelectedTeamForMembers] =
     useState<Team | null>(null);
+  const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+  const [settingsTeam, setSettingsTeam] = useState<Team | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [savingWebhook, setSavingWebhook] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState({
@@ -139,6 +143,53 @@ export const TeamsScreen = () => {
   const handleFindMembers = (team: Team) => {
     setSelectedTeamForMembers(team);
     setFindMembersModalVisible(true);
+  };
+
+  const openSettings = async (team: Team) => {
+    try {
+      setSettingsTeam(team);
+      setWebhookUrl("");
+      const res = await teamsService.getTeam(team.name);
+      if (res.success && (res.team as any)) {
+        const existing = (res.team as any).slack_webhook_url as
+          | string
+          | undefined;
+        if (existing) setWebhookUrl(existing);
+      }
+      setSettingsModalVisible(true);
+    } catch (e) {
+      showToast("Failed to load team", "error");
+    }
+  };
+
+  const isValidWebhook = (url: string) =>
+    url.startsWith("https://hooks.slack.com/services/");
+
+  const handleSaveWebhook = async () => {
+    if (!settingsTeam) return;
+    const value = webhookUrl.trim();
+    if (!value) {
+      showToast("Enter webhook URL", "warning");
+      return;
+    }
+    if (!isValidWebhook(value)) {
+      showToast("Invalid Slack webhook URL", "error");
+      return;
+    }
+    setSavingWebhook(true);
+    try {
+      const res = await teamsService.updateTeam(settingsTeam.name, {
+        slack_webhook_url: value,
+      } as any);
+      if (res.success) {
+        showToast("Saved", "success");
+        setSettingsModalVisible(false);
+      }
+    } catch (e) {
+      showToast("Save failed", "error");
+    } finally {
+      setSavingWebhook(false);
+    }
   };
 
   const handleMemberAdded = (updatedTeam: Team) => {
@@ -295,6 +346,17 @@ export const TeamsScreen = () => {
               <Ionicons name="person-add-outline" size={20} color="#007AFF" />
             </TouchableOpacity>
           )}
+          {isUserTeamLeader(item) && (
+            <TouchableOpacity
+              style={styles.findMembersButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                openSettings(item);
+              }}
+            >
+              <Ionicons name="settings-outline" size={20} color="#007AFF" />
+            </TouchableOpacity>
+          )}
           {item.name !== "LJY Soft" && isUserTeamLeader(item) && (
             <TouchableOpacity
               style={styles.deleteButton}
@@ -432,6 +494,70 @@ export const TeamsScreen = () => {
                   <ActivityIndicator size="small" color="white" />
                 ) : (
                   <Text style={styles.createButtonText}>Create</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Team Settings Modal */}
+      <Modal visible={settingsModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Team Settings</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setSettingsModalVisible(false);
+                  setSettingsTeam(null);
+                  setWebhookUrl("");
+                }}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSubtitle}>Slack Webhook URL</Text>
+            <Text style={styles.modalSubtext}>
+              Enter your slack webhook url to send notifications to your team
+              members when they are assigned to a card.
+            </Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Slack Webhook URL"
+              value={webhookUrl}
+              onChangeText={setWebhookUrl}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setSettingsModalVisible(false);
+                }}
+                disabled={savingWebhook}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.modalCreateButton,
+                  savingWebhook && styles.disabledButton,
+                ]}
+                onPress={handleSaveWebhook}
+                disabled={savingWebhook}
+              >
+                {savingWebhook ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.createButtonText}>Save</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -686,6 +812,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: "#000",
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 8,
+  },
+  modalSubtext: {
+    fontSize: 14,
+    color: "#8E8E93",
+    marginBottom: 16,
+    lineHeight: 20,
   },
   closeButton: {
     padding: 4,

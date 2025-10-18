@@ -74,6 +74,7 @@ export const LoginScreen = () => {
           username: me.username,
           email: me.email,
           teams: me.teams || [],
+          slack_user_id: me.slack_user_id,
         });
 
         router.replace("/apps");
