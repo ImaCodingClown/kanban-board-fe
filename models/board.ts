@@ -1,6 +1,6 @@
-// import { ObjectId } from "mongodb";
 export interface CardModel {
   _id?: string;
+  board_id: string;
   title: string;
   description?: string;
   assignee?: string;
@@ -14,12 +14,17 @@ export interface ColumnModel {
 }
 
 export interface BoardModel {
-  id?: string;
+  _id?: string;
   team: string;
-  iteration: string;
+  board_name: string;
+  iteration?: string;
   columns: ColumnModel[];
 }
 
 export interface BoardResponse {
   board: BoardModel;
+}
+
+export interface BoardsResponse {
+  boards: BoardModel[];
 }
