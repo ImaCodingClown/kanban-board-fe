@@ -1,5 +1,14 @@
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { UI_CONSTANTS } from "@/constants/ui";
 
 type Props = {
   visible: boolean;
@@ -7,43 +16,88 @@ type Props = {
   onConfirm: () => void;
   title?: string;
   message?: string;
+  itemName?: string;
+  subtext?: string;
   confirmText?: string;
   cancelText?: string;
+  isLoading?: boolean;
 };
 
 export const ConfirmDeleteModal = ({
   visible,
   onClose,
   onConfirm,
-  title = "Delete Card",
-  message = "Are you sure you want to delete this item?",
-  confirmText = "Yes, Delete",
-  cancelText = "No, Cancel",
+  title = "Delete Item",
+  message = "Are you sure you want to delete",
+  itemName,
+  subtext = "This action cannot be undone.",
+  confirmText = "Delete",
+  cancelText = "Cancel",
+  isLoading = false,
 }: Props) => {
   const handleConfirm = () => {
-    onConfirm();
-    onClose();
+    if (!isLoading) {
+      onConfirm();
+    }
+  };
+
+  const handleClose = () => {
+    if (!isLoading) {
+      onClose();
+    }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.container}>
-        <View style={styles.modal}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={handleClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.deleteModalContent}>
+          <View style={styles.deleteIconContainer}>
+            <Ionicons name="warning" size={56} color="#FF9500" />
+          </View>
 
-          <View style={styles.buttonContainer}>
+          <Text style={styles.deleteModalTitle}>{title}</Text>
+
+          <Text style={styles.deleteModalMessage}>
+            {message}{" "}
+            {itemName && (
+              <Text style={styles.itemNameHighlight}>"{itemName}"</Text>
+            )}
+            ?
+          </Text>
+          <Text style={styles.deleteModalSubtext}>{subtext}</Text>
+
+          <View style={styles.deleteModalActions}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
+              style={[styles.deleteModalButton, styles.deleteCancelButton]}
+              onPress={handleClose}
+              disabled={isLoading}
+              activeOpacity={0.7}
             >
-              <Text style={styles.cancelButtonText}>{cancelText}</Text>
+              <Text style={styles.deleteCancelButtonText}>{cancelText}</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+              style={[
+                styles.deleteModalButton,
+                styles.deleteConfirmButton,
+                isLoading && styles.disabledButton,
+              ]}
               onPress={handleConfirm}
+              disabled={isLoading}
+              activeOpacity={0.7}
             >
-              <Text style={styles.confirmButtonText}>{confirmText}</Text>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <View style={styles.deleteButtonContent}>
+                  <Text style={styles.deleteButtonText}>{confirmText}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -53,57 +107,90 @@ export const ConfirmDeleteModal = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: UI_CONSTANTS.MODAL.OVERLAY_BACKGROUND,
     justifyContent: "center",
-    backgroundColor: "#00000088",
-  },
-  modal: {
-    margin: 20,
-    padding: 20,
-    backgroundColor: "#fff",
-    maxWidth: 300,
-    borderRadius: 8,
-    alignSelf: "center",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: "center",
-    color: "#333",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 6,
     alignItems: "center",
   },
-  cancelButton: {
-    backgroundColor: "#6b7280",
+  deleteModalContent: {
+    backgroundColor: UI_CONSTANTS.COLORS.CARD_BACKGROUND,
+    borderRadius: UI_CONSTANTS.BORDER_RADIUS.LARGE,
+    padding: UI_CONSTANTS.SPACING.XXLARGE,
+    width: UI_CONSTANTS.MODAL.WIDTH,
+    maxWidth: UI_CONSTANTS.MODAL.MAX_WIDTH,
+    alignItems: "center",
+    ...UI_CONSTANTS.SHADOW.MODAL,
   },
-  confirmButton: {
-    backgroundColor: "#ef4444",
+  deleteIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#FFF4E6",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: UI_CONSTANTS.SPACING.LARGE,
   },
-  cancelButtonText: {
-    color: "#fff",
-    fontSize: 16,
+  deleteModalTitle: {
+    fontSize: UI_CONSTANTS.FONT_SIZES.XXLARGE,
+    fontWeight: "700",
+    color: UI_CONSTANTS.COLORS.TEXT_PRIMARY,
+    marginBottom: UI_CONSTANTS.SPACING.MEDIUM,
+    textAlign: "center",
+  },
+  deleteModalMessage: {
+    fontSize: UI_CONSTANTS.FONT_SIZES.MEDIUM,
+    color: UI_CONSTANTS.COLORS.TEXT_PRIMARY,
+    textAlign: "center",
+    marginBottom: UI_CONSTANTS.SPACING.SMALL,
+    lineHeight: 22,
+  },
+  itemNameHighlight: {
+    fontWeight: "700",
+    color: UI_CONSTANTS.COLORS.PRIMARY,
+  },
+  deleteModalSubtext: {
+    fontSize: UI_CONSTANTS.FONT_SIZES.SMALL,
+    color: UI_CONSTANTS.COLORS.TEXT_SECONDARY,
+    textAlign: "center",
+    marginBottom: UI_CONSTANTS.SPACING.XXLARGE,
+    lineHeight: 18,
+  },
+  deleteModalActions: {
+    flexDirection: "row",
+    gap: UI_CONSTANTS.SPACING.MEDIUM,
+    width: "100%",
+  },
+  deleteModalButton: {
+    flex: 1,
+    paddingVertical: UI_CONSTANTS.SPACING.MEDIUM,
+    paddingHorizontal: UI_CONSTANTS.SPACING.LARGE,
+    borderRadius: UI_CONSTANTS.BORDER_RADIUS.MEDIUM,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteCancelButton: {
+    backgroundColor: UI_CONSTANTS.COLORS.TEXT_SECONDARY,
+  },
+  deleteCancelButtonText: {
+    color: "white",
+    fontSize: UI_CONSTANTS.FONT_SIZES.MEDIUM,
     fontWeight: "600",
   },
-  confirmButtonText: {
-    color: "#fff",
-    fontSize: 16,
+  deleteConfirmButton: {
+    backgroundColor: UI_CONSTANTS.COLORS.ERROR,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontSize: UI_CONSTANTS.FONT_SIZES.MEDIUM,
     fontWeight: "600",
+  },
+  deleteButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: UI_CONSTANTS.SPACING.SMALL,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
