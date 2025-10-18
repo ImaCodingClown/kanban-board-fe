@@ -519,6 +519,12 @@ export const TeamsScreen = () => {
               </TouchableOpacity>
             </View>
 
+            <Text style={styles.modalSubtitle}>Slack Webhook URL</Text>
+            <Text style={styles.modalSubtext}>
+              Enter your slack webhook url to send notifications to your team
+              members when they are assigned to a card.
+            </Text>
+
             <TextInput
               style={styles.input}
               placeholder="Slack Webhook URL"
@@ -806,6 +812,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: "#000",
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 8,
+  },
+  modalSubtext: {
+    fontSize: 14,
+    color: "#8E8E93",
+    marginBottom: 16,
+    lineHeight: 20,
   },
   closeButton: {
     padding: 4,
