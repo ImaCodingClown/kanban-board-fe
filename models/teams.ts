@@ -19,6 +19,7 @@ export interface Team {
   created_at: string;
   updated_at: string;
   is_active: boolean;
+  slack_webhook_url?: string;
 }
 
 export interface CreateTeamPayload {
@@ -29,6 +30,7 @@ export interface CreateTeamPayload {
 export interface UpdateTeamPayload {
   name?: string;
   description?: string;
+  slack_webhook_url?: string;
 }
 
 export interface AddMemberPayload {
