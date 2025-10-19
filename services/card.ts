@@ -17,7 +17,7 @@ export const addCard = async ({
   boardId: string;
   priority: "LOW" | "MEDIUM" | "HIGH";
 }) => {
-  const response = await api.post("/v1/card", {
+  const response = await api.post("/card", {
     title,
     description,
     column_name: columnTitle,
@@ -32,7 +32,7 @@ export const addCard = async ({
 
 export const getColumns = async (boardId: string) => {
   const response = await api.get(
-    `/v1/columns?board_id=${encodeURIComponent(boardId)}`,
+    `/columns?board_id=${encodeURIComponent(boardId)}`,
   );
   return response.data;
 };
@@ -46,7 +46,7 @@ export const deleteCard = async ({
   columnName: string;
   boardId: string;
 }) => {
-  const response = await api.post("/v1/card/delete", {
+  const response = await api.post("/card/delete", {
     card_id: cardId,
     column_name: columnName,
     board_id: boardId,
@@ -73,7 +73,7 @@ export const editCard = async ({
   boardId: string;
   priority: "LOW" | "MEDIUM" | "HIGH";
 }) => {
-  const response = await api.post("/v1/card/edit", {
+  const response = await api.post("/card/edit", {
     card_id: cardId,
     title,
     description,

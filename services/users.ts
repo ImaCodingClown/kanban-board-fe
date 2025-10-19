@@ -27,7 +27,7 @@ export interface UpdateSlackIdResponse {
 
 export const usersService = {
   async getAllUsers(): Promise<UsersResponse> {
-    const response = await api.get<UsersResponse>("/v1/users");
+    const response = await api.get<UsersResponse>("/users");
     return response.data;
   },
 
@@ -36,7 +36,7 @@ export const usersService = {
     slackUserId: string,
   ): Promise<UpdateSlackIdResponse> {
     const response = await api.patch<UpdateSlackIdResponse>(
-      `/v1/user/${userId}/slack`,
+      `/user/${userId}/slack`,
       {
         slack_user_id: slackUserId,
       },
