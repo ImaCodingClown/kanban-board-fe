@@ -170,17 +170,12 @@ export const BoardScreen = () => {
     assignee: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
   ) => {
-    console.log("Board data:", board);
-    console.log("Board ID:", board?._id);
-
     if (!board?._id) {
-      console.error("No board selected. Board:", board);
       showToast("No board selected", "error");
       return;
     }
 
     try {
-      console.log("Adding card with boardId:", board._id);
       const new_card = await addCard({
         title,
         description,
