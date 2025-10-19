@@ -27,7 +27,7 @@ export interface UpdateSlackIdResponse {
 
 export const usersService = {
   async getAllUsers(): Promise<UsersResponse> {
-    const response = await api.get<UsersResponse>("/users");
+    const response = await api.get<UsersResponse>("/v1/users");
     return response.data;
   },
 

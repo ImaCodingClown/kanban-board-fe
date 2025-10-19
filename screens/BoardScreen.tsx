@@ -114,10 +114,20 @@ export const BoardScreen = () => {
   if (!board || !columns.length) {
     return (
       <View style={styles.centerContainer}>
+        <Ionicons name="clipboard-outline" size={64} color="#FF9500" />
         <Text style={styles.errorText}>
           No board found for team: {selectedTeam}
         </Text>
-        <Text style={styles.infoText}>Try creating a new board</Text>
+        <Text style={styles.infoText}>
+          Please select a board from the boards screen
+        </Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => router.push("/boards")}
+        >
+          <Ionicons name="grid" size={20} color="white" />
+          <Text style={styles.actionButtonText}>Go to Boards</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -160,12 +170,17 @@ export const BoardScreen = () => {
     assignee: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
   ) => {
+    console.log("Board data:", board);
+    console.log("Board ID:", board?._id);
+
     if (!board?._id) {
-      console.error("No board selected.");
+      console.error("No board selected. Board:", board);
+      showToast("No board selected", "error");
       return;
     }
 
     try {
+      console.log("Adding card with boardId:", board._id);
       const new_card = await addCard({
         title,
         description,
