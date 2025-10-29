@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useBoard, useUpdateBoard, useBoards } from "../hooks/useBoard";
+import { useBoard, useUpdateBoard } from "../hooks/useBoard";
 import { BoardModel, CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
 import { addCard, deleteCard, editCard } from "@/services/card";
@@ -47,9 +47,6 @@ export const BoardScreen = () => {
     title: string;
   } | null>(null);
 
-  // Board selector states
-  const [boardSelectorVisible, setBoardSelectorVisible] = useState(false);
-  const { data: availableBoards } = useBoards(selectedTeam || "");
   const { toast, showToast, hideToast } = useToast();
 
   const shouldShowScrollIndicator = (cards: CardModel[]) => {
@@ -67,17 +64,6 @@ export const BoardScreen = () => {
       setColumns(board.columns);
     }
   }, [board]);
-
-  const handleBoardSelect = (board: BoardModel) => {
-    if (selectedTeam) {
-      setSelectedBoard(selectedTeam, board._id!);
-      setBoardSelectorVisible(false);
-    }
-  };
-
-  const handleManageBoards = () => {
-    router.push("/boards");
-  };
 
   if (!user) {
     return (
@@ -128,10 +114,20 @@ export const BoardScreen = () => {
   if (!board || !columns.length) {
     return (
       <View style={styles.centerContainer}>
+        <Ionicons name="clipboard-outline" size={64} color="#FF9500" />
         <Text style={styles.errorText}>
           No board found for team: {selectedTeam}
         </Text>
-        <Text style={styles.infoText}>Try creating a new board</Text>
+        <Text style={styles.infoText}>
+          Please select a board from the boards screen
+        </Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => router.push("/boards")}
+        >
+          <Ionicons name="grid" size={20} color="white" />
+          <Text style={styles.actionButtonText}>Go to Boards</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -175,7 +171,7 @@ export const BoardScreen = () => {
     priority: "LOW" | "MEDIUM" | "HIGH",
   ) => {
     if (!board?._id) {
-      console.error("No board selected.");
+      showToast("No board selected", "error");
       return;
     }
 
@@ -308,30 +304,6 @@ export const BoardScreen = () => {
   return (
     <DraxProvider>
       <View style={styles.screen}>
-        {/* Board Selector Header */}
-        <View style={styles.boardHeader}>
-          <TouchableOpacity
-            style={styles.boardSelector}
-            onPress={() => setBoardSelectorVisible(true)}
-          >
-            <View style={styles.boardInfo}>
-              <Text style={styles.boardTitle}>
-                {board?.board_name || "Select Board"}
-              </Text>
-              <Text style={styles.teamName}>{selectedTeam}</Text>
-            </View>
-            <Ionicons name="chevron-down" size={20} color="#666" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.manageBoardsButton}
-            onPress={handleManageBoards}
-          >
-            <Ionicons name="settings" size={20} color="#007AFF" />
-            <Text style={styles.manageBoardsText}>Manage</Text>
-          </TouchableOpacity>
-        </View>
-
         <AddCardModal
           visible={showModal}
           onClose={() => setShowModal(false)}
@@ -356,62 +328,6 @@ export const BoardScreen = () => {
           message={`Are you sure you want to delete "${cardToDelete?.title}"?`}
         />
 
-        {/* Board Selector Modal */}
-        <Modal
-          visible={boardSelectorVisible}
-          animationType="slide"
-          transparent={true}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.boardSelectorModal}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select Board</Text>
-                <TouchableOpacity
-                  onPress={() => setBoardSelectorVisible(false)}
-                  style={styles.closeButton}
-                >
-                  <Ionicons name="close" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView style={styles.boardList}>
-                {availableBoards?.map((boardItem) => (
-                  <TouchableOpacity
-                    key={boardItem._id}
-                    style={[
-                      styles.boardOption,
-                      boardItem._id === board?._id &&
-                        styles.selectedBoardOption,
-                    ]}
-                    onPress={() => handleBoardSelect(boardItem)}
-                  >
-                    <View style={styles.boardOptionContent}>
-                      <Text
-                        style={[
-                          styles.boardOptionName,
-                          boardItem._id === board?._id &&
-                            styles.selectedBoardOptionName,
-                        ]}
-                      >
-                        {boardItem.board_name}
-                      </Text>
-                      <Text style={styles.boardOptionStats}>
-                        {boardItem.columns.reduce(
-                          (total, col) => total + col.cards.length,
-                          0,
-                        )}{" "}
-                        cards
-                      </Text>
-                    </View>
-                    {boardItem._id === board?._id && (
-                      <Ionicons name="checkmark" size={20} color="#007AFF" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
         <View style={styles.board}>
           {columns
             .filter((col) => typeof col.title === "string")
@@ -518,118 +434,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: 10,
-  },
-  boardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: UI_CONSTANTS.SPACING.MEDIUM,
-    paddingHorizontal: UI_CONSTANTS.SPACING.LARGE,
-    backgroundColor: UI_CONSTANTS.COLORS.CARD_BACKGROUND,
-    borderRadius: UI_CONSTANTS.BORDER_RADIUS.SMALL,
-    marginBottom: UI_CONSTANTS.SPACING.MEDIUM,
-    ...UI_CONSTANTS.SHADOW.CARD,
-  },
-  boardSelector: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: UI_CONSTANTS.SPACING.SMALL,
-    paddingHorizontal: UI_CONSTANTS.SPACING.MEDIUM,
-    backgroundColor: UI_CONSTANTS.COLORS.BACKGROUND,
-    borderRadius: UI_CONSTANTS.BORDER_RADIUS.SMALL,
-    marginRight: UI_CONSTANTS.SPACING.MEDIUM,
-  },
-  boardInfo: {
-    flex: 1,
-  },
-  boardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: UI_CONSTANTS.COLORS.TEXT_PRIMARY,
-  },
-  teamName: {
-    fontSize: 14,
-    color: UI_CONSTANTS.COLORS.TEXT_SECONDARY,
-    marginTop: 2,
-  },
-  manageBoardsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: UI_CONSTANTS.SPACING.SMALL,
-    paddingHorizontal: UI_CONSTANTS.SPACING.MEDIUM,
-    backgroundColor: "#F0F8FF",
-    borderRadius: UI_CONSTANTS.BORDER_RADIUS.SMALL,
-    gap: 6,
-  },
-  manageBoardsText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: UI_CONSTANTS.COLORS.PRIMARY,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: UI_CONSTANTS.MODAL.OVERLAY_BACKGROUND,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  boardSelectorModal: {
-    backgroundColor: UI_CONSTANTS.COLORS.CARD_BACKGROUND,
-    borderRadius: UI_CONSTANTS.BORDER_RADIUS.LARGE,
-    padding: UI_CONSTANTS.SPACING.XXLARGE,
-    width: UI_CONSTANTS.MODAL.WIDTH,
-    maxWidth: UI_CONSTANTS.MODAL.MAX_WIDTH,
-    maxHeight: UI_CONSTANTS.MODAL.MAX_HEIGHT,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#000",
-  },
-  closeButton: {
-    padding: 4,
-  },
-  boardList: {
-    maxHeight: 300,
-  },
-  boardOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: "#F2F2F7",
-  },
-  selectedBoardOption: {
-    backgroundColor: "#F0F8FF",
-    borderWidth: 1,
-    borderColor: "#007AFF",
-  },
-  boardOptionContent: {
-    flex: 1,
-  },
-  boardOptionName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#000",
-  },
-  selectedBoardOptionName: {
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  boardOptionStats: {
-    fontSize: 14,
-    color: "#8E8E93",
-    marginTop: 2,
   },
   centerContainer: {
     flex: 1,

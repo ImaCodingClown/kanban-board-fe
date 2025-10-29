@@ -8,7 +8,6 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -19,6 +18,7 @@ import { Toast } from "@/components/Toast";
 import { useToast } from "@/hooks/useToast";
 import { UI_CONSTANTS, VALIDATION } from "@/constants/ui";
 import { getErrorMessage, validateBoardName } from "@/utils/errorHandler";
+import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 
 export const BoardsScreen = () => {
   const router = useRouter();
@@ -29,6 +29,9 @@ export const BoardsScreen = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newBoardName, setNewBoardName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [boardToDelete, setBoardToDelete] = useState<BoardModel | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { toast, showToast, hideToast } = useToast();
   const { data: boards, isLoading, error } = useBoards(selectedTeam || "");
@@ -72,28 +75,24 @@ export const BoardsScreen = () => {
   };
 
   const handleDeleteBoard = (board: BoardModel) => {
-    Alert.alert(
-      "Delete Board",
-      `Are you sure you want to delete "${board.board_name}"? This action cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteBoardMutation.mutateAsync(board._id!);
-              showToast("Board deleted successfully!", "success");
-            } catch (error) {
-              showToast(
-                getErrorMessage(error, "Failed to delete board"),
-                "error",
-              );
-            }
-          },
-        },
-      ],
-    );
+    setBoardToDelete(board);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!boardToDelete) return;
+
+    setDeleting(true);
+    try {
+      await deleteBoardMutation.mutateAsync(boardToDelete._id!);
+      showToast("Board deleted successfully!", "success");
+      setDeleteModalVisible(false);
+      setBoardToDelete(null);
+    } catch (error) {
+      showToast(getErrorMessage(error, "Failed to delete board"), "error");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const renderBoardCard = ({ item }: { item: BoardModel }) => (
@@ -108,9 +107,7 @@ export const BoardsScreen = () => {
         </View>
         <View style={styles.boardInfo}>
           <Text style={styles.boardName}>{item.board_name}</Text>
-          <Text style={styles.boardSubtext}>
-            {item.team} • {item.columns.length} columns
-          </Text>
+          <Text style={styles.boardSubtext}>{item.team}</Text>
           <Text style={styles.boardCards}>
             {item.columns.reduce((total, col) => total + col.cards.length, 0)}{" "}
             cards
@@ -183,8 +180,36 @@ export const BoardsScreen = () => {
       />
 
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Boards</Text>
-        <Text style={styles.headerSubtitle}>Team: {selectedTeam}</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.teamSwitchButton}
+            onPress={() => router.push("/teams")}
+          >
+            <Ionicons
+              name="swap-horizontal"
+              size={18}
+              color={UI_CONSTANTS.COLORS.PRIMARY}
+            />
+            <Text style={styles.teamSwitchText}>Switch Team</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>{selectedTeam}</Text>
+          <Text style={styles.headerSubtitle}>
+            {boards?.length || 0} boards
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => setCreateModalVisible(true)}
+          >
+            <Ionicons name="add" size={18} color="white" />
+            <Text style={styles.createButtonText}>Create Board</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {!boards || boards.length === 0 ? (
@@ -204,16 +229,6 @@ export const BoardsScreen = () => {
         </View>
       ) : (
         <>
-          <View style={styles.createButtonContainer}>
-            <TouchableOpacity
-              style={styles.createButton}
-              onPress={() => setCreateModalVisible(true)}
-            >
-              <Ionicons name="add-circle" size={20} color="white" />
-              <Text style={styles.createButtonText}>Create New Board</Text>
-            </TouchableOpacity>
-          </View>
-
           <FlatList
             data={boards}
             renderItem={renderBoardCard}
@@ -284,6 +299,22 @@ export const BoardsScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <ConfirmDeleteModal
+        visible={deleteModalVisible}
+        onClose={() => {
+          setDeleteModalVisible(false);
+          setBoardToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Board"
+        message="Are you sure you want to delete"
+        itemName={boardToDelete?.board_name}
+        subtext="This action cannot be undone and you will lose access to all cards and data associated with this board."
+        confirmText="Delete Board"
+        cancelText="Cancel"
+        isLoading={deleting}
+      />
     </View>
   );
 };
@@ -300,21 +331,51 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: UI_CONSTANTS.SPACING.XLARGE,
     paddingVertical: UI_CONSTANTS.SPACING.LARGE,
     backgroundColor: UI_CONSTANTS.COLORS.CARD_BACKGROUND,
     borderBottomWidth: 1,
     borderBottomColor: UI_CONSTANTS.COLORS.BORDER,
   },
+  headerLeft: {
+    flex: 1,
+    alignItems: "flex-start",
+  },
+  headerCenter: {
+    flex: 2,
+    alignItems: "center",
+  },
+  headerRight: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: UI_CONSTANTS.FONT_SIZES.XXLARGE,
+    fontWeight: "700",
     color: UI_CONSTANTS.COLORS.TEXT_PRIMARY,
+    marginBottom: UI_CONSTANTS.SPACING.SMALL / 2,
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: UI_CONSTANTS.FONT_SIZES.MEDIUM,
     color: UI_CONSTANTS.COLORS.TEXT_SECONDARY,
-    marginTop: 4,
+    fontWeight: "500",
+  },
+  teamSwitchButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: UI_CONSTANTS.SPACING.SMALL,
+    paddingHorizontal: UI_CONSTANTS.SPACING.MEDIUM,
+    backgroundColor: UI_CONSTANTS.COLORS.PRIMARY_BACKGROUND,
+    borderRadius: UI_CONSTANTS.BORDER_RADIUS.SMALL,
+    gap: UI_CONSTANTS.SPACING.SMALL,
+  },
+  teamSwitchText: {
+    fontSize: UI_CONSTANTS.FONT_SIZES.MEDIUM,
+    color: UI_CONSTANTS.COLORS.PRIMARY,
+    fontWeight: "500",
   },
   listContainer: {
     padding: 20,
@@ -397,15 +458,15 @@ const styles = StyleSheet.create({
   createButton: {
     flexDirection: "row",
     backgroundColor: UI_CONSTANTS.COLORS.PRIMARY,
-    paddingHorizontal: UI_CONSTANTS.SPACING.XXLARGE,
-    paddingVertical: UI_CONSTANTS.SPACING.MEDIUM,
+    paddingHorizontal: UI_CONSTANTS.SPACING.MEDIUM,
+    paddingVertical: UI_CONSTANTS.SPACING.SMALL,
     borderRadius: UI_CONSTANTS.BORDER_RADIUS.SMALL,
     alignItems: "center",
     gap: UI_CONSTANTS.SPACING.SMALL,
   },
   createButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: UI_CONSTANTS.FONT_SIZES.MEDIUM,
     fontWeight: "600",
   },
   loadingText: {

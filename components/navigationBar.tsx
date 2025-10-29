@@ -9,12 +9,19 @@ import {
 import { useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/store/authStore";
+import { useBoard } from "@/hooks/useBoard";
+import { UI_CONSTANTS } from "@/constants/ui";
+import { BoardSelectorModal } from "@/components/BoardSelectorModal";
 
 export const NavigationBar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
   const selectedTeam = useAuth((state) => state.selectedTeam);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showBoardSelector, setShowBoardSelector] = useState(false);
+
+  // Get current board data for display
+  const { data: currentBoard } = useBoard();
 
   const handleHomePress = () => {
     router.push("/apps");
@@ -73,8 +80,12 @@ export const NavigationBar: React.FC = () => {
             >
               <Ionicons
                 name="people"
-                size={20}
-                color={pathname === "/teams" ? "#007AFF" : "#666"}
+                size={UI_CONSTANTS.ICON_SIZES.MEDIUM}
+                color={
+                  pathname === "/teams"
+                    ? UI_CONSTANTS.COLORS.PRIMARY
+                    : UI_CONSTANTS.COLORS.TEXT_TERTIARY
+                }
               />
               <Text
                 style={[
@@ -96,8 +107,12 @@ export const NavigationBar: React.FC = () => {
               >
                 <Ionicons
                   name="grid"
-                  size={20}
-                  color={pathname === "/board" ? "#007AFF" : "#666"}
+                  size={UI_CONSTANTS.ICON_SIZES.MEDIUM}
+                  color={
+                    pathname === "/board"
+                      ? UI_CONSTANTS.COLORS.PRIMARY
+                      : UI_CONSTANTS.COLORS.TEXT_TERTIARY
+                  }
                 />
                 <Text
                   style={[
@@ -113,11 +128,20 @@ export const NavigationBar: React.FC = () => {
 
           <View style={styles.rightSection}>
             {selectedTeam && pathname === "/board" && (
-              <View style={styles.currentTeamBadge}>
-                <Text style={styles.currentTeamText}>
-                  Current Team: {selectedTeam}
+              <TouchableOpacity
+                style={styles.currentBoardBadge}
+                onPress={() => setShowBoardSelector(true)}
+              >
+                <Text style={styles.currentBoardText}>
+                  {currentBoard?.board_name || "Select Board"}
                 </Text>
-              </View>
+                <Text style={styles.currentTeamText}>Team: {selectedTeam}</Text>
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={UI_CONSTANTS.COLORS.PRIMARY}
+                />
+              </TouchableOpacity>
             )}
 
             {pathname === "/teams" && (
@@ -125,7 +149,11 @@ export const NavigationBar: React.FC = () => {
                 style={styles.createTeamButton}
                 onPress={handleCreateTeam}
               >
-                <Ionicons name="add-circle" size={20} color="white" />
+                <Ionicons
+                  name="add-circle"
+                  size={UI_CONSTANTS.ICON_SIZES.MEDIUM}
+                  color="white"
+                />
                 <Text style={styles.createTeamButtonText}>Create New Team</Text>
               </TouchableOpacity>
             )}
@@ -135,11 +163,15 @@ export const NavigationBar: React.FC = () => {
                 style={styles.profileButton}
                 onPress={toggleProfileDropdown}
               >
-                <Ionicons name="person-circle" size={28} color="#007AFF" />
+                <Ionicons
+                  name="person-circle"
+                  size={UI_CONSTANTS.ICON_SIZES.XLARGE}
+                  color={UI_CONSTANTS.COLORS.PRIMARY}
+                />
                 <Ionicons
                   name={showProfileDropdown ? "chevron-up" : "chevron-down"}
-                  size={16}
-                  color="#007AFF"
+                  size={UI_CONSTANTS.ICON_SIZES.SMALL}
+                  color={UI_CONSTANTS.COLORS.PRIMARY}
                 />
               </TouchableOpacity>
 
@@ -149,7 +181,11 @@ export const NavigationBar: React.FC = () => {
                     style={styles.dropdownItem}
                     onPress={handleProfilePress}
                   >
-                    <Ionicons name="person" size={20} color="#333" />
+                    <Ionicons
+                      name="person"
+                      size={UI_CONSTANTS.ICON_SIZES.MEDIUM}
+                      color={UI_CONSTANTS.COLORS.TEXT_PRIMARY}
+                    />
                     <Text style={styles.dropdownText}>Profile</Text>
                   </TouchableOpacity>
 
@@ -157,7 +193,11 @@ export const NavigationBar: React.FC = () => {
                     style={[styles.dropdownItem, styles.lastDropdownItem]}
                     onPress={handleLogout}
                   >
-                    <Ionicons name="log-out" size={20} color="#FF3B30" />
+                    <Ionicons
+                      name="log-out"
+                      size={UI_CONSTANTS.ICON_SIZES.MEDIUM}
+                      color={UI_CONSTANTS.COLORS.ERROR}
+                    />
                     <Text style={[styles.dropdownText, styles.logoutText]}>
                       Logout
                     </Text>
@@ -168,6 +208,13 @@ export const NavigationBar: React.FC = () => {
           </View>
         </View>
       </View>
+
+      {/* Board Selector Modal */}
+      <BoardSelectorModal
+        visible={showBoardSelector}
+        onClose={() => setShowBoardSelector(false)}
+        selectedTeam={selectedTeam || ""}
+      />
     </SafeAreaView>
   );
 };
@@ -179,19 +226,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: UI_CONSTANTS.COLORS.CARD_BACKGROUND,
   },
   navbar: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: UI_CONSTANTS.COLORS.CARD_BACKGROUND,
     borderBottomWidth: 1,
-    borderBottomColor: "#E1E1E1",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderBottomColor: UI_CONSTANTS.COLORS.BORDER_LIGHT,
+    paddingVertical: UI_CONSTANTS.SPACING.MEDIUM,
+    paddingHorizontal: UI_CONSTANTS.SPACING.XLARGE,
+    ...UI_CONSTANTS.SHADOW.NAVBAR,
   },
   navContent: {
     flexDirection: "row",
@@ -201,14 +244,14 @@ const styles = StyleSheet.create({
   homeButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#F0F8FF",
+    paddingVertical: UI_CONSTANTS.SPACING.SMALL,
+    paddingHorizontal: UI_CONSTANTS.SPACING.MEDIUM,
+    borderRadius: UI_CONSTANTS.BORDER_RADIUS.SMALL,
+    backgroundColor: UI_CONSTANTS.COLORS.PRIMARY_BACKGROUND,
   },
   homeText: {
-    fontSize: 20,
-    color: "#007AFF",
+    fontSize: UI_CONSTANTS.FONT_SIZES.XXLARGE,
+    color: UI_CONSTANTS.COLORS.PRIMARY,
     fontWeight: "600",
   },
   navLinks: {
@@ -242,18 +285,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  currentTeamBadge: {
-    backgroundColor: "#F0F8FF",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+  currentBoardBadge: {
+    backgroundColor: UI_CONSTANTS.COLORS.PRIMARY_BACKGROUND,
+    paddingVertical: UI_CONSTANTS.SPACING.SMALL,
+    paddingHorizontal: UI_CONSTANTS.SPACING.MEDIUM,
+    borderRadius: UI_CONSTANTS.BORDER_RADIUS.MEDIUM,
     borderWidth: 1,
-    borderColor: "#007AFF20",
+    borderColor: UI_CONSTANTS.COLORS.PRIMARY + "20",
+    alignItems: "center",
+    flexDirection: "row",
+    gap: UI_CONSTANTS.SPACING.SMALL,
+  },
+  currentBoardText: {
+    fontSize: 16,
+    color: "#007AFF",
+    fontWeight: "700",
+    marginBottom: 2,
   },
   currentTeamText: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#007AFF",
-    fontWeight: "600",
+    fontWeight: "500",
+    opacity: 0.8,
   },
   createTeamButton: {
     flexDirection: "row",
