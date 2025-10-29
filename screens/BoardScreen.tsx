@@ -114,10 +114,20 @@ export const BoardScreen = () => {
   if (!board || !columns.length) {
     return (
       <View style={styles.centerContainer}>
+        <Ionicons name="clipboard-outline" size={64} color="#FF9500" />
         <Text style={styles.errorText}>
           No board found for team: {selectedTeam}
         </Text>
-        <Text style={styles.infoText}>Try creating a new board</Text>
+        <Text style={styles.infoText}>
+          Please select a board from the boards screen
+        </Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => router.push("/boards")}
+        >
+          <Ionicons name="grid" size={20} color="white" />
+          <Text style={styles.actionButtonText}>Go to Boards</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -161,7 +171,7 @@ export const BoardScreen = () => {
     priority: "LOW" | "MEDIUM" | "HIGH",
   ) => {
     if (!board?._id) {
-      console.error("No board selected.");
+      showToast("No board selected", "error");
       return;
     }
 
