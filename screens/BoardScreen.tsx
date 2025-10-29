@@ -7,6 +7,7 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -17,6 +18,9 @@ import { addCard, deleteCard, editCard } from "@/services/card";
 import { useAuth } from "@/store/authStore";
 import { EditCardModal } from "@/components/EditCardModal";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
+import { useToast } from "@/hooks/useToast";
+import { UI_CONSTANTS } from "@/constants/ui";
+import { getErrorMessage } from "@/utils/errorHandler";
 
 const { width } = Dimensions.get("window");
 
@@ -25,6 +29,9 @@ export const BoardScreen = () => {
   const { data, isLoading, error } = useBoard();
   const selectedTeam = useAuth((state) => state.selectedTeam);
   const user = useAuth((state) => state.user);
+  const getSelectedBoard = useAuth((state) => state.getSelectedBoard);
+  const setSelectedBoard = useAuth((state) => state.setSelectedBoard);
+
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [activeColumn, setActiveColumn] = useState<string>("");
@@ -39,6 +46,8 @@ export const BoardScreen = () => {
     columnTitle: string;
     title: string;
   } | null>(null);
+
+  const { toast, showToast, hideToast } = useToast();
 
   const shouldShowScrollIndicator = (cards: CardModel[]) => {
     if (cards.length === 0) return false;
@@ -105,10 +114,20 @@ export const BoardScreen = () => {
   if (!board || !columns.length) {
     return (
       <View style={styles.centerContainer}>
+        <Ionicons name="clipboard-outline" size={64} color="#FF9500" />
         <Text style={styles.errorText}>
           No board found for team: {selectedTeam}
         </Text>
-        <Text style={styles.infoText}>Try creating a new board</Text>
+        <Text style={styles.infoText}>
+          Please select a board from the boards screen
+        </Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => router.push("/boards")}
+        >
+          <Ionicons name="grid" size={20} color="white" />
+          <Text style={styles.actionButtonText}>Go to Boards</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -151,8 +170,8 @@ export const BoardScreen = () => {
     assignee: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
   ) => {
-    if (!selectedTeam) {
-      console.error("No team selected.");
+    if (!board?._id) {
+      showToast("No board selected", "error");
       return;
     }
 
@@ -163,7 +182,7 @@ export const BoardScreen = () => {
         columnTitle: activeColumn,
         storyPoint,
         assignee,
-        team: selectedTeam,
+        boardId: board._id,
         priority,
       });
       setColumns((prevColumns) => {
@@ -206,8 +225,8 @@ export const BoardScreen = () => {
   };
 
   const handleDeleteCard = async (cardId: string, columnTitle: string) => {
-    if (!selectedTeam) {
-      console.error("No team selected.");
+    if (!board?._id) {
+      console.error("No board selected.");
       return;
     }
 
@@ -215,7 +234,7 @@ export const BoardScreen = () => {
       await deleteCard({
         cardId,
         columnName: columnTitle,
-        team: selectedTeam,
+        boardId: board._id,
       });
       setColumns((prevColumns) =>
         prevColumns.map((column) => {
@@ -240,7 +259,7 @@ export const BoardScreen = () => {
     assignee: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
   ) => {
-    if (!editingCard || !selectedTeam) return;
+    if (!editingCard || !board?._id) return;
 
     try {
       await editCard({
@@ -250,7 +269,7 @@ export const BoardScreen = () => {
         columnTitle: editingCard.columnTitle,
         storyPoint: storyPoint,
         assignee,
-        team: selectedTeam,
+        boardId: board._id,
         priority,
       });
 
@@ -308,6 +327,7 @@ export const BoardScreen = () => {
           onConfirm={handleConfirmDelete}
           message={`Are you sure you want to delete "${cardToDelete?.title}"?`}
         />
+
         <View style={styles.board}>
           {columns
             .filter((col) => typeof col.title === "string")

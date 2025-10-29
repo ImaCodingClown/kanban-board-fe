@@ -6,7 +6,7 @@ export const addCard = async ({
   columnTitle,
   storyPoint,
   assignee,
-  team,
+  boardId,
   priority,
 }: {
   title: string;
@@ -14,25 +14,25 @@ export const addCard = async ({
   columnTitle: string;
   storyPoint: number;
   assignee: string;
-  team: string;
+  boardId: string;
   priority: "LOW" | "MEDIUM" | "HIGH";
 }) => {
-  const response = await api.post("/v1/card", {
+  const response = await api.post("/card", {
     title,
     description,
     column_name: columnTitle,
     story_point: storyPoint,
     assignee,
-    team,
+    board_id: boardId,
     priority,
   });
 
   return response.data;
 };
 
-export const getColumns = async (team: string) => {
+export const getColumns = async (boardId: string) => {
   const response = await api.get(
-    `/v1/columns?team=${encodeURIComponent(team)}`,
+    `/columns?board_id=${encodeURIComponent(boardId)}`,
   );
   return response.data;
 };
@@ -40,16 +40,16 @@ export const getColumns = async (team: string) => {
 export const deleteCard = async ({
   cardId,
   columnName,
-  team,
+  boardId,
 }: {
   cardId: string;
   columnName: string;
-  team: string;
+  boardId: string;
 }) => {
-  const response = await api.post("/v1/card/delete", {
+  const response = await api.post("/card/delete", {
     card_id: cardId,
     column_name: columnName,
-    team,
+    board_id: boardId,
   });
   return response.data;
 };
@@ -61,7 +61,7 @@ export const editCard = async ({
   columnTitle,
   storyPoint,
   assignee,
-  team,
+  boardId,
   priority,
 }: {
   cardId: string;
@@ -70,17 +70,17 @@ export const editCard = async ({
   columnTitle: string;
   storyPoint: number;
   assignee: string;
-  team: string;
+  boardId: string;
   priority: "LOW" | "MEDIUM" | "HIGH";
 }) => {
-  const response = await api.post("/v1/card/edit", {
+  const response = await api.post("/card/edit", {
     card_id: cardId,
     title,
     description,
     column_name: columnTitle,
     story_point: storyPoint,
     assignee,
-    team,
+    board_id: boardId,
     priority,
   });
 

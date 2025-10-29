@@ -14,12 +14,16 @@ interface AuthState {
   refreshToken: string | null;
   user: User | null;
   selectedTeam: string | undefined;
+  selectedBoards: Record<string, string>;
   tokenExpiry: number | null;
   setTokens: (accessToken: string, refreshToken: string) => void;
   setUser: (user: User | null) => void;
   updateUserSlackId: (slackUserId: string) => void;
   setSelectedTeam: (team: string | undefined) => void;
   getSelectedTeam: () => string | undefined;
+  setSelectedBoard: (teamName: string, boardId: string) => void;
+  getSelectedBoard: (teamName: string) => string | undefined;
+  clearSelectedBoards: () => void;
   logout: () => void;
   isTokenValid: () => boolean;
   checkTokenExpiry: () => boolean;
@@ -34,6 +38,7 @@ export const useAuth = create<AuthState>()(
       refreshToken: null,
       user: null,
       selectedTeam: undefined,
+      selectedBoards: {},
       tokenExpiry: null,
       setTokens: (accessToken, refreshToken) => {
         if (accessToken) {
@@ -65,12 +70,27 @@ export const useAuth = create<AuthState>()(
       },
       setSelectedTeam: (team) => set({ selectedTeam: team }),
       getSelectedTeam: () => get().selectedTeam,
+      setSelectedBoard: (teamName, boardId) => {
+        const currentBoards = get().selectedBoards;
+        set({
+          selectedBoards: {
+            ...currentBoards,
+            [teamName]: boardId,
+          },
+        });
+      },
+      getSelectedBoard: (teamName) => {
+        const currentBoards = get().selectedBoards;
+        return currentBoards[teamName];
+      },
+      clearSelectedBoards: () => set({ selectedBoards: {} }),
       logout: () =>
         set({
           accessToken: null,
           refreshToken: null,
           user: null,
           selectedTeam: undefined,
+          selectedBoards: {},
           tokenExpiry: null,
         }),
       isTokenValid: () => {
