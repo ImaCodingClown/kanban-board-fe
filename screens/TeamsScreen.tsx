@@ -17,6 +17,9 @@ import { Team } from "@/models/teams";
 import { FindMembersModal } from "@/components/FindMembersModal";
 import { Toast } from "@/components/Toast";
 import { formatErrorMessage, canRetry, getRetryAfter } from "@/services/api";
+import { TeamActionButton } from "@/components/TeamActionButton";
+import { UI_CONSTANTS } from "@/constants/ui";
+import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 
 declare global {
   var openCreateTeamModal: (() => void) | undefined;
@@ -198,6 +201,11 @@ export const TeamsScreen = () => {
     );
   };
 
+  const handleTeamSelect = (team: Team) => {
+    setSelectedTeam(team.name);
+    router.push("/boards");
+  };
+
   const isUserTeamLeader = (team: Team) => {
     const userId =
       typeof user?.id === "object" && (user?.id as any)?.$oid
@@ -229,7 +237,10 @@ export const TeamsScreen = () => {
         setCreateModalVisible(false);
         setNewTeamName("");
         setNewTeamDescription("");
-        showToast("Team created successfully!", "success");
+        showToast(
+          "Team created successfully! Default board has been created.",
+          "success",
+        );
         loadTeams();
       }
     } catch (error: any) {
@@ -309,15 +320,15 @@ export const TeamsScreen = () => {
     }
   };
 
-  const handleSelectTeam = (teamName: string) => {
+  const handleSelectTeamForBoard = (teamName: string) => {
     setSelectedTeam(teamName);
-    router.push("/board");
+    router.push("/boards");
   };
 
   const renderTeamCard = ({ item }: { item: Team }) => (
     <TouchableOpacity
       style={styles.teamCard}
-      onPress={() => handleSelectTeam(item.name)}
+      onPress={() => handleSelectTeamForBoard(item.name)}
       activeOpacity={0.7}
     >
       <View style={styles.teamCardContent}>
@@ -336,39 +347,32 @@ export const TeamsScreen = () => {
 
         <View style={styles.teamActions}>
           {isUserTeamLeader(item) && (
-            <TouchableOpacity
-              style={styles.findMembersButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleFindMembers(item);
-              }}
-            >
-              <Ionicons name="person-add-outline" size={20} color="#007AFF" />
-            </TouchableOpacity>
+            <TeamActionButton
+              icon="person-add-outline"
+              color={UI_CONSTANTS.COLORS.PRIMARY}
+              onPress={() => handleFindMembers(item)}
+            />
           )}
           {isUserTeamLeader(item) && (
-            <TouchableOpacity
-              style={styles.findMembersButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                openSettings(item);
-              }}
-            >
-              <Ionicons name="settings-outline" size={20} color="#007AFF" />
-            </TouchableOpacity>
+            <TeamActionButton
+              icon="settings-outline"
+              color={UI_CONSTANTS.COLORS.PRIMARY}
+              onPress={() => openSettings(item)}
+            />
           )}
           {item.name !== "LJY Soft" && isUserTeamLeader(item) && (
-            <TouchableOpacity
+            <TeamActionButton
+              icon="trash-outline"
+              color={UI_CONSTANTS.COLORS.ERROR}
+              onPress={() => confirmDeleteTeam(item)}
               style={styles.deleteButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                confirmDeleteTeam(item);
-              }}
-            >
-              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-            </TouchableOpacity>
+            />
           )}
-          <Ionicons name="chevron-forward" size={24} color="#C7C7CC" />
+          <Ionicons
+            name="chevron-forward"
+            size={UI_CONSTANTS.ICON_SIZES.LARGE}
+            color={UI_CONSTANTS.COLORS.TEXT_SECONDARY}
+          />
         </View>
       </View>
     </TouchableOpacity>
@@ -565,78 +569,22 @@ export const TeamsScreen = () => {
         </View>
       </Modal>
 
-      <Modal
+      <ConfirmDeleteModal
         visible={deleteModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
-          if (!deleting) {
-            setDeleteModalVisible(false);
-            setTeamToDelete(null);
-          }
+        onClose={() => {
+          setDeleteModalVisible(false);
+          setTeamToDelete(null);
         }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.deleteModalContent}>
-            <View style={styles.deleteIconContainer}>
-              <Ionicons name="warning" size={56} color="#FF9500" />
-            </View>
+        onConfirm={handleDeleteTeam}
+        title="Delete Team"
+        message="Are you sure you want to delete"
+        itemName={teamToDelete?.name}
+        subtext="This action cannot be undone and you will lose access to all boards and data associated with this team."
+        confirmText="Delete Team"
+        cancelText="Cancel"
+        isLoading={deleting}
+      />
 
-            <Text style={styles.deleteModalTitle}>Delete Team</Text>
-
-            <Text style={styles.deleteModalMessage}>
-              Are you sure you want to delete{" "}
-              <Text style={styles.teamNameHighlight}>
-                "{teamToDelete?.name}"
-              </Text>
-              ?
-            </Text>
-            <Text style={styles.deleteModalSubtext}>
-              This action cannot be undone and you will lose access to all
-              boards and data associated with this team.
-            </Text>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  if (!deleting) {
-                    setDeleteModalVisible(false);
-                    setTeamToDelete(null);
-                  }
-                }}
-                disabled={deleting}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  styles.deleteConfirmButton,
-                  deleting && styles.disabledButton,
-                ]}
-                onPress={handleDeleteTeam}
-                disabled={deleting}
-                activeOpacity={0.8}
-              >
-                {deleting ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color="white" />
-                    <Text style={styles.loadingText}>Deleting...</Text>
-                  </View>
-                ) : (
-                  <View style={styles.deleteButtonContent}>
-                    <Ionicons name="trash-outline" size={18} color="white" />
-                    <Text style={styles.deleteButtonText}>Delete Team</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
       <FindMembersModal
         visible={findMembersModalVisible}
         team={selectedTeamForMembers}
@@ -653,7 +601,7 @@ export const TeamsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: UI_CONSTANTS.COLORS.BACKGROUND,
   },
   centerContainer: {
     flex: 1,
@@ -725,12 +673,10 @@ const styles = StyleSheet.create({
   teamActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: UI_CONSTANTS.SPACING.MEDIUM,
   },
   deleteButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "#FFF0F0",
+    backgroundColor: UI_CONSTANTS.COLORS.ERROR_BACKGROUND,
   },
   emptyContainer: {
     flex: 1,
@@ -762,6 +708,14 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  secondaryButton: {
+    backgroundColor: "#F2F2F7",
+  },
+  secondaryButtonText: {
+    color: "#007AFF",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -923,11 +877,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  deleteButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,

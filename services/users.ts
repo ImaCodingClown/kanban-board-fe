@@ -36,7 +36,7 @@ export const usersService = {
     slackUserId: string,
   ): Promise<UpdateSlackIdResponse> {
     const response = await api.patch<UpdateSlackIdResponse>(
-      `/v1/user/${userId}/slack`,
+      `/user/${userId}/slack`,
       {
         slack_user_id: slackUserId,
       },
