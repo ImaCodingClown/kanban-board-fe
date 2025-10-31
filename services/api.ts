@@ -97,9 +97,12 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const response = await axios.post(`${api.defaults.baseURL}${apiPath("/refresh")}`, {
-            refresh_token: refreshToken,
-          });
+          const response = await axios.post(
+            `${api.defaults.baseURL}${apiPath("/refresh")}`,
+            {
+              refresh_token: refreshToken,
+            },
+          );
 
           if (response.data.access_token) {
             const { access_token, refresh_token } = response.data;
