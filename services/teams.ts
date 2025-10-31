@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api, apiPath } from "./api";
 import {
   CreateTeamPayload,
   UpdateTeamPayload,
@@ -11,17 +11,17 @@ import {
 
 export const teamsService = {
   async createTeam(payload: CreateTeamPayload): Promise<TeamResponse> {
-    const response = await api.post<TeamResponse>("/teams", payload);
+    const response = await api.post<TeamResponse>(apiPath("/teams"), payload);
     return response.data;
   },
 
   async getTeam(teamName: string): Promise<TeamResponse> {
-    const response = await api.get<TeamResponse>(`/teams/${teamName}`);
+    const response = await api.get<TeamResponse>(apiPath(`/teams/${teamName}`));
     return response.data;
   },
 
   async getUserTeams(): Promise<TeamsResponse> {
-    const response = await api.get<TeamsResponse>("/teams");
+    const response = await api.get<TeamsResponse>(apiPath("/teams"));
     return response.data;
   },
 
@@ -29,7 +29,10 @@ export const teamsService = {
     teamName: string,
     payload: UpdateTeamPayload,
   ): Promise<TeamResponse> {
-    const response = await api.put<TeamResponse>(`/teams/${teamName}`, payload);
+    const response = await api.put<TeamResponse>(
+      apiPath(`/teams/${teamName}`),
+      payload,
+    );
     return response.data;
   },
 
@@ -38,7 +41,7 @@ export const teamsService = {
     payload: AddMemberPayload,
   ): Promise<TeamResponse> {
     const response = await api.post<TeamResponse>(
-      `/teams/${teamName}/members`,
+      apiPath(`/teams/${teamName}/members`),
       payload,
     );
     return response.data;
@@ -49,7 +52,7 @@ export const teamsService = {
     payload: RemoveMemberPayload,
   ): Promise<TeamResponse> {
     const response = await api.delete<TeamResponse>(
-      `/teams/${teamName}/members`,
+      apiPath(`/teams/${teamName}/members`),
       { data: payload },
     );
     return response.data;
@@ -57,14 +60,14 @@ export const teamsService = {
 
   async leaveTeam(teamName: string): Promise<{ success: boolean }> {
     const response = await api.post<{ success: boolean }>(
-      `/teams/${teamName}/leave`,
+      apiPath(`/teams/${teamName}/leave`),
     );
     return response.data;
   },
 
   async deleteTeam(teamName: string): Promise<{ success: boolean }> {
     const response = await api.delete<{ success: boolean }>(
-      `/teams/${teamName}`,
+      apiPath(`/teams/${teamName}`),
     );
     return response.data;
   },
@@ -73,7 +76,7 @@ export const teamsService = {
     teamName: string,
   ): Promise<TeamWithUsernamesResponse> {
     const response = await api.get<TeamWithUsernamesResponse>(
-      `/teams/${teamName}/with-usernames`,
+      apiPath(`/teams/${teamName}/with-usernames`),
     );
     return response.data;
   },

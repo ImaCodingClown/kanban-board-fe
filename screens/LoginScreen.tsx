@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { api } from "../services/api";
+import { api, apiPath } from "../services/api";
 import { useAuth } from "../store/authStore";
 import { useRouter } from "expo-router";
 
@@ -48,7 +48,10 @@ export const LoginScreen = () => {
     setLoading(true);
 
     try {
-      const response = await api.post("/login", { userOrEmail, password });
+      const response = await api.post(apiPath("/login"), {
+        userOrEmail,
+        password,
+      });
 
       if (!response.data || !response.data.access_token) {
         throw new Error("Invalid response from server");
@@ -63,7 +66,7 @@ export const LoginScreen = () => {
       setTokens(access_token, refresh_token);
 
       try {
-        const { data: me } = await api.get("/me");
+        const { data: me } = await api.get(apiPath("/me"));
 
         if (!me || !me.id) {
           throw new Error("Failed to get user information");

@@ -7,12 +7,33 @@ declare module "axios" {
   }
 }
 
-export const api = axios.create({
-  baseURL: "https://kanban-board-be.onrender.com/v1", // your Rust backend
+// Use host-only base URL with smart fallback (no .env required)
+const DEFAULT_PROD_URL = "https://kanban-board-be.onrender.com";
+const DEFAULT_DEV_URL = "http://localhost:8080";
+const API_VERSION_PREFIX = "/v1";
 
-  // baseURL: "http://localhost:8080/v1", // for local development
+// Infer from runtime (web only) and fall back to prod.
+const HOST_BASE_URL = (() => {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || host === "127.0.0.1";
+    return isLocal ? DEFAULT_DEV_URL : DEFAULT_PROD_URL;
+  }
+
+  // For native, default to prod (works out of the box). Use env to override if needed.
+  return DEFAULT_PROD_URL;
+})();
+
+export const api = axios.create({
+  baseURL: HOST_BASE_URL,
   timeout: 5000,
 });
+
+// Build versioned API paths from a single source of truth
+export const apiPath = (path: string): string => {
+  if (!path.startsWith("/")) path = `/${path}`;
+  return `${API_VERSION_PREFIX}${path}`;
+};
 
 const RETRY_CONFIG = {
   maxRetries: 3,
@@ -76,7 +97,7 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const response = await axios.post(`${api.defaults.baseURL}/refresh`, {
+          const response = await axios.post(`${api.defaults.baseURL}${apiPath("/refresh")}`, {
             refresh_token: refreshToken,
           });
 

@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { api } from "../services/api";
+import { api, apiPath } from "../services/api";
 import { useAuth } from "../store/authStore";
 import { useRouter } from "expo-router";
 
@@ -62,7 +62,7 @@ export const SignUpScreen = () => {
 
     setLoading(true);
     try {
-      const response = await api.post("/signup", {
+      const response = await api.post(apiPath("/signup"), {
         username,
         email,
         password,
@@ -81,7 +81,7 @@ export const SignUpScreen = () => {
       setTokens(access_token, refresh_token);
 
       try {
-        const { data: me } = await api.get("/me");
+        const { data: me } = await api.get(apiPath("/me"));
 
         if (!me || !me.id) {
           throw new Error("Failed to get user information");

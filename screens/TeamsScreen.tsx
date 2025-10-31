@@ -427,7 +427,13 @@ export const TeamsScreen = () => {
         <FlatList
           data={teams}
           renderItem={renderTeamCard}
-          keyExtractor={(item) => item._id || item.name}
+          keyExtractor={(item) => {
+            const raw = (item as any)._id;
+            if (raw && typeof raw === "object" && "$oid" in raw) {
+              return (raw as any).$oid as string;
+            }
+            return String(item._id || item.name);
+          }}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />
