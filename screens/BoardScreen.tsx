@@ -363,6 +363,11 @@ export const BoardScreen = () => {
                       receptive={false}
                       draggable
                     >
+                      {card.card_id && (
+                        <View style={styles.cardIdContainer}>
+                          <Text style={styles.cardId}>{card.card_id}</Text>
+                        </View>
+                      )}
                       <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() =>
@@ -384,7 +389,9 @@ export const BoardScreen = () => {
                       >
                         <Text style={styles.editButtonText}>edit</Text>
                       </TouchableOpacity>
-                      <Text style={styles.cardTitle}>{card.title}</Text>
+                      <Text style={[styles.cardTitle, { marginTop: 20 }]}>
+                        {card.title}
+                      </Text>
                       {card.description && (
                         <Text style={styles.cardDescription}>
                           {card.description}
@@ -544,6 +551,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    position: "relative",
+  },
+  cardIdContainer: {
+    position: "absolute",
+    top: 6,
+    left: 8,
+    backgroundColor: "#E8F4FD",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#B3D9F2",
+    zIndex: 1,
+  },
+  cardId: {
+    fontSize: 10,
+    color: "#0066CC",
+    fontWeight: "700",
   },
   cardTitle: {
     fontWeight: "bold",

@@ -123,6 +123,12 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
       <View style={styles.container}>
         <View style={styles.modal}>
           <Text>Edit Card</Text>
+          {card.card_id && (
+            <View style={styles.cardIdDisplay}>
+              <Text style={styles.cardIdLabel}>Card ID:</Text>
+              <Text style={styles.cardIdValue}>{card.card_id}</Text>
+            </View>
+          )}
           <TextInput
             placeholder="Title"
             value={title}
@@ -307,5 +313,25 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: "#fff",
+  },
+  cardIdDisplay: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 4,
+    marginVertical: 6,
+  },
+  cardIdLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+    marginRight: 8,
+  },
+  cardIdValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#333",
   },
 });

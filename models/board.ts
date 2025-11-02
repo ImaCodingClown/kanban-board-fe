@@ -1,5 +1,7 @@
 export interface CardModel {
   _id?: string;
+  card_id?: string;
+  card_number?: number;
   board_id: string;
   title: string;
   description?: string;
