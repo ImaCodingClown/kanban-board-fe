@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { api, apiPath } from "./api";
 
 export interface User {
   id: string;
@@ -27,7 +27,7 @@ export interface UpdateSlackIdResponse {
 
 export const usersService = {
   async getAllUsers(): Promise<UsersResponse> {
-    const response = await api.get<UsersResponse>("/users");
+    const response = await api.get<UsersResponse>(apiPath("/users"));
     return response.data;
   },
 
@@ -36,7 +36,7 @@ export const usersService = {
     slackUserId: string,
   ): Promise<UpdateSlackIdResponse> {
     const response = await api.patch<UpdateSlackIdResponse>(
-      `/user/${userId}/slack`,
+      apiPath(`/user/${userId}/slack`),
       {
         slack_user_id: slackUserId,
       },
