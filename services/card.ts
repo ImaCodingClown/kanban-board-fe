@@ -76,10 +76,10 @@ export const editCard = async ({
   const response = await api.post(apiPath("/card/edit"), {
     card_id: cardId,
     title,
-    description,
+    description: description.trim() || undefined,
     column_name: columnTitle,
-    story_point: storyPoint,
-    assignee,
+    story_point: storyPoint > 0 ? storyPoint : undefined,
+    assignee: assignee.trim() || undefined,
     board_id: boardId,
     priority,
   });
