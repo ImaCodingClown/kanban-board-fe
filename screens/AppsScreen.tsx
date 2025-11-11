@@ -17,6 +17,14 @@ export const AppsScreen = () => {
 
   const modules = [
     {
+      name: "Company",
+      icon: "business",
+      route: "/company",
+      description: "Manage your company",
+      color: "#1976D2",
+      bgColor: "#F0F8FF",
+    },
+    {
       name: "Teams",
       icon: "people",
       route: "/teams",
