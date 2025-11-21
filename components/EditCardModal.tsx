@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { useAuth } from "@/store/authStore";
 import { CardModel } from "../models/board";
-import { editCard } from "@/services/card";
 import { Picker } from "@react-native-picker/picker";
 import { teamsService } from "@/services/teams";
 import { TeamMemberWithUsername } from "@/models/teams";
@@ -96,24 +95,8 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
-    try {
-      await editCard({
-        cardId: card._id!,
-        title,
-        description,
-        columnTitle: card.columnTitle,
-        storyPoint,
-        assignee,
-        priority,
-        team: selectedTeam!,
-      });
-
-      onSuccess?.(title, description, storyPoint, assignee, priority);
-      onClose();
-    } catch (error) {
-      console.error("Failed to edit card:", error);
-      alert("Error editing card.");
-    }
+    onSuccess?.(title, description, storyPoint, assignee, priority);
+    onClose();
   };
 
   const FIB = [1, 2, 3, 5, 8, 13, 21];
