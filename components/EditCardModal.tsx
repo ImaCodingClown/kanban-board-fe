@@ -96,16 +96,26 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
+    if (!card._id) {
+      alert("Cannot edit card: Card ID is missing.");
+      return;
+    }
+
+    if (!card.board_id) {
+      alert("Cannot edit card: Board ID is missing.");
+      return;
+    }
+
     try {
       await editCard({
-        cardId: card._id!,
+        cardId: card._id,
         title,
         description,
         columnTitle: card.columnTitle,
         storyPoint,
         assignee,
+        boardId: card.board_id,
         priority,
-        team: selectedTeam!,
       });
 
       onSuccess?.(title, description, storyPoint, assignee, priority);

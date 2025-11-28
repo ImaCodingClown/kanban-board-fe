@@ -261,9 +261,14 @@ export const BoardScreen = () => {
   ) => {
     if (!editingCard || !board?._id) return;
 
+    if (!editingCard._id) {
+      alert("Cannot edit card: Card ID is missing.");
+      return;
+    }
+
     try {
       await editCard({
-        cardId: editingCard._id!,
+        cardId: editingCard._id,
         title: title,
         description: description,
         columnTitle: editingCard.columnTitle,
@@ -365,19 +370,27 @@ export const BoardScreen = () => {
                     >
                       <TouchableOpacity
                         style={styles.deleteButton}
-                        onPress={() =>
+                        onPress={() => {
+                          if (!card._id) {
+                            alert("Cannot delete card: Card ID is missing.");
+                            return;
+                          }
                           confirmDeleteCard(
-                            card._id!,
+                            card._id,
                             col.title.toString(),
                             card.title,
-                          )
-                        }
+                          );
+                        }}
                       >
                         <Text style={styles.deleteButtonText}>❌</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.editButton}
                         onPress={() => {
+                          if (!card._id) {
+                            alert("Cannot edit card: Card ID is missing.");
+                            return;
+                          }
                           setEditingCard({ ...card, columnTitle: col.title });
                           setEditModalVisible(true);
                         }}
