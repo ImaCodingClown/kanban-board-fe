@@ -127,6 +127,20 @@ export const ProfileScreen = () => {
             </View>
           </View>
 
+          <View style={styles.divider} />
+
+          <View style={styles.infoRow}>
+            <Ionicons name="business" size={20} color="#007AFF" />
+            <View style={styles.infoContent}>
+              <Text style={styles.label}>Company</Text>
+              <Text style={styles.value}>
+                {(user as any).company || "No company"}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
           <View style={styles.infoRow}>
             <Ionicons name="people" size={20} color="#007AFF" />
             <View style={styles.infoContent}>
