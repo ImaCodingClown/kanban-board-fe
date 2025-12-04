@@ -89,7 +89,7 @@ export const BoardScreen = () => {
     return columns.map((col) => ({
       ...col,
       cards: col.cards.filter((card) =>
-        card.assignee ? selectedUserFilters.includes(card.assignee) : false
+        card.assignee ? selectedUserFilters.includes(card.assignee) : false,
       ),
     }));
   }, [columns, selectedUserFilters]);
@@ -98,7 +98,7 @@ export const BoardScreen = () => {
     setSelectedUserFilters((prev) =>
       prev.includes(username)
         ? prev.filter((u) => u !== username)
-        : [...prev, username]
+        : [...prev, username],
     );
   };
 
