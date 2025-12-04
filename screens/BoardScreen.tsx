@@ -1,5 +1,5 @@
 import { DraxProvider, DraxView } from "react-native-drax";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { addCard, deleteCard, editCard } from "@/services/card";
 import { useAuth } from "@/store/authStore";
 import { EditCardModal } from "@/components/EditCardModal";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
+import { UserFilterDropdown } from "@/components/UserFilterDropdown";
 import { useToast } from "@/hooks/useToast";
 import { UI_CONSTANTS } from "@/constants/ui";
 import { getErrorMessage } from "@/utils/errorHandler";
@@ -47,6 +48,9 @@ export const BoardScreen = () => {
     title: string;
   } | null>(null);
 
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const [selectedUserFilters, setSelectedUserFilters] = useState<string[]>([]);
+
   const { toast, showToast, hideToast } = useToast();
 
   const shouldShowScrollIndicator = (cards: CardModel[]) => {
@@ -64,6 +68,44 @@ export const BoardScreen = () => {
       setColumns(board.columns);
     }
   }, [board]);
+
+  const availableUsers = useMemo(() => {
+    const users = new Set<string>();
+    columns.forEach((col) => {
+      col.cards.forEach((card) => {
+        if (card.assignee) {
+          users.add(card.assignee);
+        }
+      });
+    });
+    return Array.from(users).sort();
+  }, [columns]);
+
+  const filteredColumns = useMemo(() => {
+    if (selectedUserFilters.length === 0) {
+      return columns;
+    }
+
+    return columns.map((col) => ({
+      ...col,
+      cards: col.cards.filter((card) =>
+        card.assignee ? selectedUserFilters.includes(card.assignee) : false
+      ),
+    }));
+  }, [columns, selectedUserFilters]);
+
+  const handleToggleUser = (username: string) => {
+    setSelectedUserFilters((prev) =>
+      prev.includes(username)
+        ? prev.filter((u) => u !== username)
+        : [...prev, username]
+    );
+  };
+
+  const handleClearFilter = () => {
+    setSelectedUserFilters([]);
+    setFilterDropdownOpen(false);
+  };
 
   if (!user) {
     return (
@@ -304,6 +346,14 @@ export const BoardScreen = () => {
   return (
     <DraxProvider>
       <View style={styles.screen}>
+        <UserFilterDropdown
+          availableUsers={availableUsers}
+          selectedUsers={selectedUserFilters}
+          onToggleUser={handleToggleUser}
+          onClearFilter={handleClearFilter}
+          isOpen={filterDropdownOpen}
+          onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
+        />
         <AddCardModal
           visible={showModal}
           onClose={() => setShowModal(false)}
@@ -329,7 +379,7 @@ export const BoardScreen = () => {
         />
 
         <View style={styles.board}>
-          {columns
+          {filteredColumns
             .filter((col) => typeof col.title === "string")
             .map((col) => (
               <DraxView
