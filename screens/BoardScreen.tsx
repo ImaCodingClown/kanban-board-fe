@@ -69,16 +69,22 @@ export const BoardScreen = () => {
     }
   }, [board]);
 
-  const availableUsers = useMemo(() => {
+  const { availableUsers, hasUnassignedCards } = useMemo(() => {
     const users = new Set<string>();
+    let hasUnassigned = false;
     columns.forEach((col) => {
       col.cards.forEach((card) => {
         if (card.assignee) {
           users.add(card.assignee);
+        } else {
+          hasUnassigned = true;
         }
       });
     });
-    return Array.from(users).sort();
+    return {
+      availableUsers: Array.from(users).sort(),
+      hasUnassignedCards: hasUnassigned,
+    };
   }, [columns]);
 
   const filteredColumns = useMemo(() => {
@@ -88,9 +94,16 @@ export const BoardScreen = () => {
 
     return columns.map((col) => ({
       ...col,
-      cards: col.cards.filter((card) =>
-        card.assignee ? selectedUserFilters.includes(card.assignee) : false,
-      ),
+      cards: col.cards.filter((card) => {
+        // Check if "Unassigned" filter is selected
+        if (selectedUserFilters.includes("__unassigned__") && !card.assignee) {
+          return true;
+        }
+        // Check if card's assignee matches selected users
+        return card.assignee
+          ? selectedUserFilters.includes(card.assignee)
+          : false;
+      }),
     }));
   }, [columns, selectedUserFilters]);
 
@@ -353,6 +366,7 @@ export const BoardScreen = () => {
           onClearFilter={handleClearFilter}
           isOpen={filterDropdownOpen}
           onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
+          hasUnassignedCards={hasUnassignedCards}
         />
         <AddCardModal
           visible={showModal}

@@ -16,6 +16,7 @@ interface UserFilterDropdownProps {
   onClearFilter: () => void;
   isOpen: boolean;
   onToggle: () => void;
+  hasUnassignedCards: boolean;
 }
 
 export const UserFilterDropdown: React.FC<UserFilterDropdownProps> = ({
@@ -25,9 +26,11 @@ export const UserFilterDropdown: React.FC<UserFilterDropdownProps> = ({
   onClearFilter,
   isOpen,
   onToggle,
+  hasUnassignedCards,
 }) => {
   const animatedOpacity = useRef(new Animated.Value(0)).current;
-  const dropdownHeight = Math.min(availableUsers.length * 40 + 12, 240);
+  const totalItems = availableUsers.length + (hasUnassignedCards ? 1 : 0);
+  const dropdownHeight = Math.min(totalItems * 40 + 12, 240);
 
   useEffect(() => {
     Animated.timing(animatedOpacity, {
@@ -99,60 +102,115 @@ export const UserFilterDropdown: React.FC<UserFilterDropdownProps> = ({
             showsVerticalScrollIndicator={true}
             nestedScrollEnabled={true}
           >
-            {availableUsers.length === 0 ? (
+            {availableUsers.length === 0 && !hasUnassignedCards ? (
               <View style={styles.emptyContainer}>
                 <Ionicons name="person-outline" size={24} color="#C7C7CC" />
                 <Text style={styles.emptyText}>No users</Text>
               </View>
             ) : (
-              availableUsers.map((username) => {
-                const isSelected = selectedUsers.includes(username);
-                return (
+              <>
+                {hasUnassignedCards && (
                   <TouchableOpacity
-                    key={username}
+                    key="__unassigned__"
                     style={[
                       styles.userItem,
-                      isSelected && styles.userItemSelected,
+                      selectedUsers.includes("__unassigned__") &&
+                        styles.userItemSelected,
                     ]}
-                    onPress={() => onToggleUser(username)}
+                    onPress={() => onToggleUser("__unassigned__")}
                     activeOpacity={0.7}
                   >
                     <View style={styles.userItemContent}>
                       <View
                         style={[
                           styles.userIconContainer,
-                          isSelected && styles.userIconContainerSelected,
+                          selectedUsers.includes("__unassigned__") &&
+                            styles.userIconContainerSelected,
                         ]}
                       >
                         <Ionicons
-                          name="person"
+                          name="help-outline"
                           size={12}
-                          color={isSelected ? "#007AFF" : "#8E8E93"}
+                          color={
+                            selectedUsers.includes("__unassigned__")
+                              ? "#007AFF"
+                              : "#8E8E93"
+                          }
                         />
                       </View>
                       <Text
                         style={[
                           styles.userName,
-                          isSelected && styles.userNameSelected,
+                          selectedUsers.includes("__unassigned__") &&
+                            styles.userNameSelected,
                         ]}
                         numberOfLines={1}
                       >
-                        {username}
+                        Unassigned
                       </Text>
                     </View>
                     <View
                       style={[
                         styles.checkbox,
-                        isSelected && styles.checkboxSelected,
+                        selectedUsers.includes("__unassigned__") &&
+                          styles.checkboxSelected,
                       ]}
                     >
-                      {isSelected && (
+                      {selectedUsers.includes("__unassigned__") && (
                         <Ionicons name="checkmark" size={12} color="#FFF" />
                       )}
                     </View>
                   </TouchableOpacity>
-                );
-              })
+                )}
+                {availableUsers.map((username) => {
+                  const isSelected = selectedUsers.includes(username);
+                  return (
+                    <TouchableOpacity
+                      key={username}
+                      style={[
+                        styles.userItem,
+                        isSelected && styles.userItemSelected,
+                      ]}
+                      onPress={() => onToggleUser(username)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.userItemContent}>
+                        <View
+                          style={[
+                            styles.userIconContainer,
+                            isSelected && styles.userIconContainerSelected,
+                          ]}
+                        >
+                          <Ionicons
+                            name="person"
+                            size={12}
+                            color={isSelected ? "#007AFF" : "#8E8E93"}
+                          />
+                        </View>
+                        <Text
+                          style={[
+                            styles.userName,
+                            isSelected && styles.userNameSelected,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {username}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.checkbox,
+                          isSelected && styles.checkboxSelected,
+                        ]}
+                      >
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={12} color="#FFF" />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </>
             )}
           </ScrollView>
         </Animated.View>
