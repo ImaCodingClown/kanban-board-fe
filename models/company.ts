@@ -44,4 +44,3 @@ export interface CompaniesResponse {
   companies: Company[];
   message?: string;
 }
-

@@ -79,7 +79,8 @@ export const CompanyDetailScreen = () => {
       const mockCompany: Company = {
         _id: id,
         name: id === "default" ? "LJY Software" : id,
-        description: "A software development company focused on building innovative solutions.",
+        description:
+          "A software development company focused on building innovative solutions.",
         owner_id: isTony ? user.id : "owner-id",
         owner_username: isTony ? "tony" : "owner",
         members: [
@@ -278,10 +279,7 @@ export const CompanyDetailScreen = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Company Details</Text>
         {isOwner() && !isEditing && (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={handleEdit}
-          >
+          <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
             <Ionicons name="create-outline" size={24} color="#007AFF" />
           </TouchableOpacity>
         )}
@@ -352,7 +350,9 @@ export const CompanyDetailScreen = () => {
         </View>
 
         <View style={styles.membersSection}>
-          <Text style={styles.sectionTitle}>Members ({company.members.length})</Text>
+          <Text style={styles.sectionTitle}>
+            Members ({company.members.length})
+          </Text>
           <FlatList
             data={company.members}
             renderItem={renderMember}
@@ -580,4 +580,3 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-

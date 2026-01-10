@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,12 +19,16 @@ import { useToast } from "@/hooks/useToast";
 import { UI_CONSTANTS, VALIDATION } from "@/constants/ui";
 import { getErrorMessage, validateBoardName } from "@/utils/errorHandler";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
+import { isForbiddenError } from "@/services/api";
+import { usePermission } from "@/hooks/usePermission";
 
 export const BoardsScreen = () => {
   const router = useRouter();
   const user = useAuth((state) => state.user);
   const selectedTeam = useAuth((state) => state.selectedTeam);
   const setSelectedBoard = useAuth((state) => state.setSelectedBoard);
+  const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
+  const { canAccessTeam } = usePermission();
 
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newBoardName, setNewBoardName] = useState("");
@@ -37,6 +41,21 @@ export const BoardsScreen = () => {
   const { data: boards, isLoading, error } = useBoards(selectedTeam || "");
   const createBoardMutation = useCreateBoard();
   const deleteBoardMutation = useDeleteBoard();
+
+  useEffect(() => {
+    if (selectedTeam && !canAccessTeam(selectedTeam)) {
+      setSelectedTeam(undefined);
+      router.replace("/teams");
+    }
+  }, [selectedTeam, canAccessTeam, setSelectedTeam, router]);
+
+  useEffect(() => {
+    if (error && isForbiddenError(error)) {
+      showToast("Access denied to this team", "error");
+      setSelectedTeam(undefined);
+      router.replace("/teams");
+    }
+  }, [error, showToast, setSelectedTeam, router]);
 
   const handleCreateBoard = async () => {
     const validation = validateBoardName(newBoardName);

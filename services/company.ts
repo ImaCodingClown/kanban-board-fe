@@ -47,4 +47,3 @@ export const companyService = {
     return response.data;
   },
 };
-
