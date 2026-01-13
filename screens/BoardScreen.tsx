@@ -1,6 +1,5 @@
-import { DraxProvider, DraxView, DraxScrollView } from "react-native-drax";
-
-import React, { useState, useMemo, useCallback } from "react";
+import { DraxProvider, DraxView } from "react-native-drax";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -21,6 +20,8 @@ import { UserFilterDropdown } from "@/components/UserFilterDropdown";
 import { useToast } from "@/hooks/useToast";
 import { UI_CONSTANTS } from "@/constants/ui";
 import { getErrorMessage } from "@/utils/errorHandler";
+import { isForbiddenError } from "@/services/api";
+import { usePermission } from "@/hooks/usePermission";
 
 const { width } = Dimensions.get("window");
 
@@ -131,6 +132,10 @@ export const BoardScreen = () => {
   const { data, isLoading, error } = useBoard();
   const selectedTeam = useAuth((state) => state.selectedTeam);
   const user = useAuth((state) => state.user);
+  const getSelectedBoard = useAuth((state) => state.getSelectedBoard);
+  const setSelectedBoard = useAuth((state) => state.setSelectedBoard);
+  const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
+  const { canAccessTeam } = usePermission();
 
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -157,6 +162,20 @@ export const BoardScreen = () => {
   const bumpDraxKey = useCallback(() => {
     setDraxKey((prev) => prev + 1);
   }, []);
+
+  useEffect(() => {
+    if (selectedTeam && !canAccessTeam(selectedTeam)) {
+      setSelectedTeam(undefined);
+      router.replace("/teams");
+    }
+  }, [selectedTeam, canAccessTeam, setSelectedTeam, router]);
+
+  useEffect(() => {
+    if (error && isForbiddenError(error)) {
+      showToast("Access denied to this board", "error");
+      router.replace("/boards");
+    }
+  }, [error, showToast, router]);
 
   const shouldShowScrollIndicator = (cards: CardModel[]) => {
     if (cards.length === 0) return false;

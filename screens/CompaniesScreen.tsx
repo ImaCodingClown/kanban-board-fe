@@ -67,7 +67,7 @@ export const CompaniesScreen = () => {
       // placeholder with mock data
       // This will be replaced with actual API call when backend is ready
       const userGroups = (user as any).group || [];
-      
+
       if (userGroups.length === 0) {
         // placeholder with mock data
         const isTony = user.username.toLowerCase() === "tony";
@@ -98,25 +98,27 @@ export const CompaniesScreen = () => {
       } else {
         // Map groups to companies
         const isTony = user.username.toLowerCase() === "tony";
-        const mockCompanies: Company[] = userGroups.map((group: string, index: number) => ({
-          _id: `company-${index}`,
-          name: group,
-          description: `Company: ${group}`,
-          owner_id: isTony ? user.id : "owner-id",
-          owner_username: isTony ? "tony" : "owner",
-          members: [
-            {
-              user_id: user.id,
-              username: user.username,
-              email: user.email,
-              role: isTony ? "Owner" : "Member",
-              joined_at: new Date().toISOString(),
-            },
-          ],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_active: true,
-        }));
+        const mockCompanies: Company[] = userGroups.map(
+          (group: string, index: number) => ({
+            _id: `company-${index}`,
+            name: group,
+            description: `Company: ${group}`,
+            owner_id: isTony ? user.id : "owner-id",
+            owner_username: isTony ? "tony" : "owner",
+            members: [
+              {
+                user_id: user.id,
+                username: user.username,
+                email: user.email,
+                role: isTony ? "Owner" : "Member",
+                joined_at: new Date().toISOString(),
+              },
+            ],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            is_active: true,
+          }),
+        );
         setCompanies(mockCompanies);
       }
     } catch (error: any) {
@@ -380,4 +382,3 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 });
-

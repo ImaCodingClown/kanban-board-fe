@@ -119,6 +119,14 @@ api.interceptors.response.use(
         useAuth.getState().logout();
       }
     }
+
+    if (error.response?.status === 403) {
+      const errorData = error.response?.data?.error;
+      error.userMessage = errorData?.message || "Access denied";
+      error.errorCode = errorData?.code || "FORBIDDEN";
+      error.isForbidden = true;
+    }
+
     if (
       isRetryableError(error) &&
       originalRequest._retryCount < RETRY_CONFIG.maxRetries
@@ -163,6 +171,10 @@ export const formatErrorMessage = (error: any): string => {
     return error.userMessage;
   }
 
+  if (error.response?.status === 403) {
+    return error.response?.data?.error?.details || "Access denied";
+  }
+
   if (error.response?.status === 404) {
     return "Resource not found";
   }
@@ -180,6 +192,10 @@ export const formatErrorMessage = (error: any): string => {
   }
 
   return "An unknown error occurred";
+};
+
+export const isForbiddenError = (error: any): boolean => {
+  return error.response?.status === 403 || error.isForbidden === true;
 };
 
 export const canRetry = (error: any): boolean => {
