@@ -6,8 +6,6 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  ScrollView,
-  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -26,6 +24,108 @@ import { isForbiddenError } from "@/services/api";
 import { usePermission } from "@/hooks/usePermission";
 
 const { width } = Dimensions.get("window");
+
+const getStableCardKey = (card: CardModel) =>
+  String(
+    (card as any)._id ??
+      (card as any).id ??
+      (card as any).__tempId ??
+      (card as any).card_id ??
+      `${card.title}`,
+  );
+
+// Separate Card component to prevent unnecessary re-renders
+const DraggableCard = React.memo(
+  ({
+    card,
+    columnTitle,
+    onDelete,
+    onEdit,
+  }: {
+    card: CardModel;
+    columnTitle: string;
+    onDelete: (cardId: string, columnTitle: string, cardTitle: string) => void;
+    onEdit: (card: CardModel, columnTitle: string) => void;
+  }) => {
+    const [isDragging, setIsDragging] = useState(false);
+    const draxCardKey = getStableCardKey(card);
+
+    return (
+      <DraxView
+        // Stable, unique ID
+        id={`card-${draxCardKey}`}
+        style={[styles.card, isDragging && styles.cardDraggingLocal]}
+        draggingStyle={styles.dragging}
+        hoverDraggingStyle={styles.hoverDragging}
+        dragPayload={{ ...card, sourceColumnTitle: columnTitle }}
+        longPressDelay={150}
+        receptive={false}
+        draggable={true}
+        // Drag lifecycle callbacks to track state
+        onDragStart={() => {
+          setIsDragging(true);
+        }}
+        onDrag={() => {
+          // Keep drag state active
+          if (!isDragging) setIsDragging(true);
+        }}
+        onDragEnd={() => {
+          setIsDragging(false);
+        }}
+        onDragDrop={() => {
+          setIsDragging(false);
+        }}
+      >
+        {card.card_id && (
+          <View style={styles.cardIdContainer}>
+            <Text style={styles.cardId}>{card.card_id}</Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => onDelete(card._id!, columnTitle, card.title)}
+          onPressIn={(e) => e.stopPropagation?.()}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.deleteButtonText}>❌</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => onEdit(card, columnTitle)}
+          onPressIn={(e) => e.stopPropagation?.()}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.editButtonText}>edit</Text>
+        </TouchableOpacity>
+
+        <Text style={[styles.cardTitle, { marginTop: 20 }]}>{card.title}</Text>
+        {card.description && (
+          <Text style={styles.cardDescription}>{card.description}</Text>
+        )}
+        {card.assignee && <Text style={styles.assignee}>{card.assignee}</Text>}
+        {card.story_point !== undefined && card.story_point > 0 && (
+          <Text style={styles.storyPoint}>Story Point: {card.story_point}</Text>
+        )}
+        {card.priority && (
+          <Text
+            style={[
+              styles.priorityText,
+              card.priority === "HIGH"
+                ? styles.prHighText
+                : card.priority === "MEDIUM"
+                  ? styles.prMedText
+                  : styles.prLowText,
+            ]}
+          >
+            Priority: {card.priority}
+          </Text>
+        )}
+      </DraxView>
+    );
+  },
+);
 
 export const BoardScreen = () => {
   const router = useRouter();
@@ -55,7 +155,13 @@ export const BoardScreen = () => {
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [selectedUserFilters, setSelectedUserFilters] = useState<string[]>([]);
 
-  const { toast, showToast, hideToast } = useToast();
+  const [draxKey, setDraxKey] = useState(0);
+
+  const { showToast } = useToast();
+
+  const bumpDraxKey = useCallback(() => {
+    setDraxKey((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     if (selectedTeam && !canAccessTeam(selectedTeam)) {
@@ -84,8 +190,9 @@ export const BoardScreen = () => {
   React.useEffect(() => {
     if (board) {
       setColumns(board.columns);
+      bumpDraxKey();
     }
-  }, [board]);
+  }, [board, bumpDraxKey]);
 
   const { availableUsers, hasUnassignedCards } = useMemo(() => {
     const users = new Set<string>();
@@ -137,6 +244,20 @@ export const BoardScreen = () => {
     setSelectedUserFilters([]);
     setFilterDropdownOpen(false);
   };
+
+  // Memoized callbacks to prevent recreation
+  const handleCardDelete = useCallback(
+    (cardId: string, columnTitle: string, cardTitle: string) => {
+      setCardToDelete({ id: cardId, columnTitle, title: cardTitle });
+      setDeleteModalVisible(true);
+    },
+    [],
+  );
+
+  const handleCardEdit = useCallback((card: CardModel, columnTitle: string) => {
+    setEditingCard({ ...card, columnTitle });
+    setEditModalVisible(true);
+  }, []);
 
   if (!user) {
     return (
@@ -207,11 +328,14 @@ export const BoardScreen = () => {
 
   const onReceiveDragDrop = (event: any, destinationColumnTitle: string) => {
     const draggedCard: CardModel = event.dragged.payload;
+    const draggedKey = getStableCardKey(draggedCard);
 
     setColumns((prevColumns) => {
       const newColumns = prevColumns.map((column) => ({
         ...column,
-        cards: column.cards.filter((card) => card._id !== draggedCard._id),
+        cards: column.cards.filter(
+          (card) => getStableCardKey(card) !== draggedKey,
+        ),
       }));
 
       const updatedColumns = newColumns.map((column) => {
@@ -258,12 +382,20 @@ export const BoardScreen = () => {
         boardId: board._id,
         priority,
       });
+      //  ensure new cards have a stable unique id even if _id is briefly missing
+      const normalizedNewCard = (new_card as any)._id
+        ? new_card
+        : {
+            ...(new_card as any),
+            __tempId: `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          };
+
       setColumns((prevColumns) => {
         const newColumns = prevColumns.map((column) => {
           if (column.title === activeColumn) {
             return {
               ...column,
-              cards: [...column.cards, new_card],
+              cards: [...column.cards, normalizedNewCard as any],
             };
           }
           return column;
@@ -271,6 +403,8 @@ export const BoardScreen = () => {
 
         return newColumns;
       });
+
+      setTimeout(bumpDraxKey, 0);
     } catch (error) {
       console.error("Failed to add card: ", error);
     }
@@ -279,15 +413,6 @@ export const BoardScreen = () => {
   const openAddCardModal = (columnTitle: string) => {
     setActiveColumn(columnTitle);
     setShowModal(true);
-  };
-
-  const confirmDeleteCard = (
-    cardId: string,
-    columnTitle: string,
-    cardTitle: string,
-  ) => {
-    setCardToDelete({ id: cardId, columnTitle, title: cardTitle });
-    setDeleteModalVisible(true);
   };
 
   const handleConfirmDelete = () => {
@@ -320,6 +445,8 @@ export const BoardScreen = () => {
           return column;
         }),
       );
+
+      setTimeout(bumpDraxKey, 0);
     } catch (error) {
       console.error("Failed to delete card:", error);
     }
@@ -375,7 +502,7 @@ export const BoardScreen = () => {
   };
 
   return (
-    <DraxProvider>
+    <DraxProvider key={`drax-${draxKey}`}>
       <View style={styles.screen}>
         <UserFilterDropdown
           availableUsers={availableUsers}
@@ -415,16 +542,18 @@ export const BoardScreen = () => {
             .filter((col) => typeof col.title === "string")
             .map((col) => (
               <DraxView
-                key={col.title as string}
+                key={`column-${col.title}`}
+                id={`column-${col.title}`}
                 style={styles.column}
                 receivingStyle={styles.receiving}
                 onReceiveDragDrop={(event) =>
                   onReceiveDragDrop(event, col.title as string)
                 }
+                receptive={true}
                 testID={`column-${col.title}`}
               >
                 <Text style={styles.columnTitle}>{col.title}</Text>
-                <ScrollView
+                <DraxScrollView
                   style={styles.cardsContainer}
                   showsVerticalScrollIndicator={shouldShowScrollIndicator(
                     col.cards,
@@ -432,79 +561,24 @@ export const BoardScreen = () => {
                   nestedScrollEnabled={true}
                   indicatorStyle="black"
                   scrollIndicatorInsets={{ right: 0 }}
+                  scrollEventThrottle={16}
+                  keyboardShouldPersistTaps="handled"
                 >
-                  {col.cards.map((card) => (
-                    <DraxView
-                      key={card._id}
-                      style={styles.card}
-                      draggingStyle={styles.dragging}
-                      hoverDraggingStyle={styles.hoverDragging}
-                      dragReleasedStyle={styles.dragging}
-                      dragPayload={card}
-                      longPressDelay={150}
-                      receptive={false}
-                      draggable
-                    >
-                      {card.card_id && (
-                        <View style={styles.cardIdContainer}>
-                          <Text style={styles.cardId}>{card.card_id}</Text>
-                        </View>
-                      )}
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() =>
-                          confirmDeleteCard(
-                            card._id!,
-                            col.title.toString(),
-                            card.title,
-                          )
-                        }
-                      >
-                        <Text style={styles.deleteButtonText}>❌</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() => {
-                          setEditingCard({ ...card, columnTitle: col.title });
-                          setEditModalVisible(true);
-                        }}
-                      >
-                        <Text style={styles.editButtonText}>edit</Text>
-                      </TouchableOpacity>
-                      <Text style={[styles.cardTitle, { marginTop: 20 }]}>
-                        {card.title}
-                      </Text>
-                      {card.description && (
-                        <Text style={styles.cardDescription}>
-                          {card.description}
-                        </Text>
-                      )}
-                      {card.assignee && (
-                        <Text style={styles.assignee}>{card.assignee}</Text>
-                      )}
-                      {card.story_point !== undefined &&
-                        card.story_point > 0 && (
-                          <Text style={styles.storyPoint}>
-                            Story Point: {card.story_point}
-                          </Text>
-                        )}
-                      {card.priority && (
-                        <Text
-                          style={[
-                            styles.priorityText,
-                            card.priority === "HIGH"
-                              ? styles.prHighText
-                              : card.priority === "MEDIUM"
-                                ? styles.prMedText
-                                : styles.prLowText,
-                          ]}
-                        >
-                          Priority: {card.priority}
-                        </Text>
-                      )}
-                    </DraxView>
-                  ))}
-                </ScrollView>
+                  {col.cards.map((card) => {
+                    const cardKey = getStableCardKey(card);
+
+                    return (
+                      <DraggableCard
+                        key={`card-${cardKey}`}
+                        card={card}
+                        columnTitle={col.title as string}
+                        onDelete={handleCardDelete}
+                        onEdit={handleCardEdit}
+                      />
+                    );
+                  })}
+                </DraxScrollView>
+
                 <TouchableOpacity
                   style={styles.addCardButton}
                   onPress={() => openAddCardModal(col.title.toString())}
@@ -634,6 +708,17 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     position: "relative",
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  cardDraggingLocal: {
+    borderColor: "#007AFF",
+    backgroundColor: "#f8f9ff",
+  },
+  dragHandleText: {
+    color: "#999",
+    fontSize: 10,
+    letterSpacing: 2,
   },
   cardIdContainer: {
     position: "absolute",
