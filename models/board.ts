@@ -1,10 +1,13 @@
 export interface CardModel {
-  id?: string;
+  _id?: string;
+  card_id?: string;
+  card_number?: number;
+  board_id: string;
   title: string;
   description?: string;
   assignee?: string;
-  storyPoints?: number;
-  priority?: string;
+  story_point?: number;
+  priority?: "LOW" | "MEDIUM" | "HIGH";
 }
 
 export interface ColumnModel {
@@ -13,12 +16,17 @@ export interface ColumnModel {
 }
 
 export interface BoardModel {
-  id?: string;
+  _id?: string;
   team: string;
-  iteration: string;
+  board_name: string;
+  iteration?: string;
   columns: ColumnModel[];
 }
 
 export interface BoardResponse {
   board: BoardModel;
+}
+
+export interface BoardsResponse {
+  boards: BoardModel[];
 }
