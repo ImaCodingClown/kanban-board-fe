@@ -1,4 +1,4 @@
-import { DraxProvider, DraxView } from "react-native-drax";
+import { DraxProvider, DraxView, DraxScrollView } from "react-native-drax";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
@@ -18,8 +18,6 @@ import { EditCardModal } from "@/components/EditCardModal";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { UserFilterDropdown } from "@/components/UserFilterDropdown";
 import { useToast } from "@/hooks/useToast";
-import { UI_CONSTANTS } from "@/constants/ui";
-import { getErrorMessage } from "@/utils/errorHandler";
 import { isForbiddenError } from "@/services/api";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -127,13 +125,13 @@ const DraggableCard = React.memo(
   },
 );
 
+DraggableCard.displayName = "DraggableCard";
+
 export const BoardScreen = () => {
   const router = useRouter();
   const { data, isLoading, error } = useBoard();
   const selectedTeam = useAuth((state) => state.selectedTeam);
   const user = useAuth((state) => state.user);
-  const getSelectedBoard = useAuth((state) => state.getSelectedBoard);
-  const setSelectedBoard = useAuth((state) => state.setSelectedBoard);
   const setSelectedTeam = useAuth((state) => state.setSelectedTeam);
   const { canAccessTeam } = usePermission();
 

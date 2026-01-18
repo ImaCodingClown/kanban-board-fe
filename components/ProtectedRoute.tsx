@@ -22,7 +22,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const checkTokenExpiry = useAuth((state) => state.checkTokenExpiry);
   const accessToken = useAuth((state) => state.accessToken);
   const user = useAuth((state) => state.user);
-  const { isAuthenticated, canAccessTeam } = usePermission();
+  const { canAccessTeam } = usePermission();
   const [isChecking, setIsChecking] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
