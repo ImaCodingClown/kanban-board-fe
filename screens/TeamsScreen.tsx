@@ -16,12 +16,7 @@ import { teamsService } from "@/services/teams";
 import { Team } from "@/models/teams";
 import { FindMembersModal } from "@/components/FindMembersModal";
 import { Toast } from "@/components/Toast";
-import {
-  formatErrorMessage,
-  canRetry,
-  getRetryAfter,
-  isForbiddenError,
-} from "@/services/api";
+import { formatErrorMessage, canRetry, getRetryAfter } from "@/services/api";
 import { TeamActionButton } from "@/components/TeamActionButton";
 import { UI_CONSTANTS } from "@/constants/ui";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";

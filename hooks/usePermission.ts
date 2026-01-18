@@ -2,14 +2,6 @@ import { useCallback, useMemo } from "react";
 import { useAuth } from "@/store/authStore";
 import { Team, TeamRole } from "@/models/teams";
 
-interface TeamPermissionCache {
-  [teamName: string]: {
-    role: TeamRole | null;
-    permissions: string[];
-    leaderId: string;
-  };
-}
-
 interface UsePermissionResult {
   isAuthenticated: boolean;
   userTeams: string[];
