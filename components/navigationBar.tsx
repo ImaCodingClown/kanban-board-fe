@@ -18,10 +18,9 @@ export const NavigationBar: React.FC<{
   onSubmitCard: (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => Promise<void>;
 }> = ({ onSubmitCard }) => {
-
   const router = useRouter();
   const setToken = useAuth((state) => state.setToken);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -49,7 +48,7 @@ export const NavigationBar: React.FC<{
   const handleSubmitCard = async (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
     if (!team) {

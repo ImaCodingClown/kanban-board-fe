@@ -1,6 +1,8 @@
 import { DraxProvider, DraxView } from "react-native-drax";
 import React, { useState } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { Ionicons } from "@expo/vector-icons";
 import { useBoard } from "../hooks/useBoard";
 import { CardModel, ColumnModel } from "../models/board";
 import { AddCardModal } from "@/components/AddCardModal";
@@ -12,10 +14,11 @@ const { width } = Dimensions.get("window");
 export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
   const [cards, setCards] = useState<(CardModel & { columnTitle: string })[]>(
-    []
+    [],
   );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState<string>("all");
 
   const board: ColumnModel[] | undefined = data;
 
@@ -28,7 +31,7 @@ export const BoardScreen = () => {
         col.cards.map((card: CardModel) => ({
           ...card,
           columnTitle: col.title,
-        }))
+        })),
       );
       setCards(allCards);
     }
@@ -44,15 +47,15 @@ export const BoardScreen = () => {
       prev.map((card) =>
         card.id === draggedCardId
           ? { ...card, columnTitle: destinationColumnTitle }
-          : card
-      )
+          : card,
+      ),
     );
   };
 
   const handleAddCard = async (
     title: string,
     description: string,
-    columnTitle: string
+    columnTitle: string,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
 
@@ -69,6 +72,11 @@ export const BoardScreen = () => {
     }
   };
 
+  const filteredCards = cards.filter((card) => {
+    if (selectedPriority === "all") return true;
+    return card.priority === selectedPriority;
+  });
+
   return (
     <DraxProvider>
       <View style={styles.screen}>
@@ -77,6 +85,29 @@ export const BoardScreen = () => {
           onClose={() => setShowModal(false)}
           onSubmit={handleAddCard}
         />
+
+        <View style={styles.filterContainer}>
+          <View style={styles.pickerWrapper}>
+            <Ionicons
+              name="flag"
+              size={16}
+              color="#007AFF"
+              style={styles.priorityIcon}
+            />
+            <Picker
+              selectedValue={selectedPriority}
+              onValueChange={(value) => setSelectedPriority(value)}
+              style={styles.picker}
+              mode="dropdown"
+            >
+              <Picker.Item label="Priority" value="all" />
+              <Picker.Item label="High" value="high" />
+              <Picker.Item label="Medium" value="medium" />
+              <Picker.Item label="Low" value="low" />
+            </Picker>
+          </View>
+        </View>
+
         <View style={styles.board}>
           {columns
             .filter((col) => typeof col.title === "string")
@@ -91,7 +122,7 @@ export const BoardScreen = () => {
                 testID={`column-${col.title}`}
               >
                 <Text style={styles.columnTitle}>{col.title}</Text>
-                {cards
+                {filteredCards
                   .filter((card) => card.columnTitle === col.title)
                   .map((card) => (
                     <DraxView
@@ -102,7 +133,7 @@ export const BoardScreen = () => {
                       dragReleasedStyle={styles.dragging}
                       dragPayload={card.id}
                       longPressDelay={150}
-                      receptive={false} // Important so card itself doesn't act like a drop target
+                      receptive={false}
                       draggable
                     >
                       <Text>{card.title}</Text>
@@ -172,5 +203,35 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: 10,
+  },
+  filterContainer: {
+    width: "100%",
+    alignItems: "center",
+    paddingVertical: 5,
+    marginBottom: 100,
+    paddingRight: 850,
+  },
+  pickerWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    overflow: "hidden",
+    height: 34,
+    paddingLeft: 8,
+  },
+  priorityIcon: {
+    marginRight: 6,
+    backgroundColor: "transparent",
+  },
+  picker: {
+    height: 34,
+    width: 145,
+    fontWeight: "bold",
+    color: "#007AFF",
+    fontSize: 12,
+    backgroundColor: "#f5f5f5",
   },
 });
