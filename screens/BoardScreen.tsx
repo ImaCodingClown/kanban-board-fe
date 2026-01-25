@@ -18,7 +18,7 @@ export const BoardScreen = () => {
   );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [selectedPriority, setSelectedPriority] = useState<string>("all");
+  const [selectedPriority, setSelectedPriority] = useState<string>("enum");
 
   const board: ColumnModel[] | undefined = data;
 
