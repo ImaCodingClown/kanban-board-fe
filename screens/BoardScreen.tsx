@@ -11,32 +11,38 @@ import { useAuth } from "@/store/authStore";
 
 const { width } = Dimensions.get("window");
 
+export enum Priority {
+  High = "high",
+  Medium = "medium",
+  Low = "low",
+  None = "none",
+}
+
 export const BoardScreen = () => {
   const { data, isLoading } = useBoard();
+
   const [cards, setCards] = useState<(CardModel & { columnTitle: string })[]>(
     [],
   );
   const [columns, setColumns] = useState<ColumnModel[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [selectedPriority, setSelectedPriority] = useState<string>("enum");
+  const [selectedPriority, setSelectedPriority] = useState<Priority>(
+    Priority.None,
+  );
 
   const board: ColumnModel[] | undefined = data;
 
   React.useEffect(() => {
-    const controller = new AbortController();
-
     if (board) {
       setColumns(board);
-      const allCards = board.flatMap((col: ColumnModel) =>
-        col.cards.map((card: CardModel) => ({
+      const allCards = board.flatMap((col) =>
+        col.cards.map((card) => ({
           ...card,
           columnTitle: col.title,
         })),
       );
       setCards(allCards);
     }
-
-    return () => controller.abort();
   }, [board]);
 
   if (isLoading) return <Text>Loading board...</Text>;
@@ -58,22 +64,18 @@ export const BoardScreen = () => {
     columnTitle: string,
   ) => {
     const team = useAuth.getState().user?.teams?.[0];
-
-    if (!team) {
-      console.error("No team found for the user.");
-      return;
-    }
+    if (!team) return;
 
     try {
       const newCard = await addCard({ title, description, columnTitle, team });
       setCards((prev) => [...prev, { ...newCard, columnTitle }]);
     } catch (error) {
-      console.error("Failed to add card: ", error);
+      console.error("Failed to add card:", error);
     }
   };
 
   const filteredCards = cards.filter((card) => {
-    if (selectedPriority === "all") return true;
+    if (selectedPriority === Priority.None) return true;
     return card.priority === selectedPriority;
   });
 
@@ -88,65 +90,50 @@ export const BoardScreen = () => {
 
         <View style={styles.filterContainer}>
           <View style={styles.pickerWrapper}>
-            <Ionicons
-              name="flag"
-              size={16}
-              color="#007AFF"
-              style={styles.priorityIcon}
-            />
+            <Ionicons name="flag" size={16} color="#007AFF" />
             <Picker
               selectedValue={selectedPriority}
-              onValueChange={(value) => setSelectedPriority(value)}
+              onValueChange={(value) => setSelectedPriority(value as Priority)}
               style={styles.picker}
               mode="dropdown"
             >
-              <Picker.Item label="Priority" value="all" />
-              <Picker.Item label="High" value="high" />
-              <Picker.Item label="Medium" value="medium" />
-              <Picker.Item label="Low" value="low" />
+              <Picker.Item label="Priority" value={Priority.None} />
+              <Picker.Item label="High" value={Priority.High} />
+              <Picker.Item label="Medium" value={Priority.Medium} />
+              <Picker.Item label="Low" value={Priority.Low} />
             </Picker>
           </View>
         </View>
 
         <View style={styles.board}>
-          {columns
-            .filter((col) => typeof col.title === "string")
-            .map((col) => (
-              <DraxView
-                key={col.title as string}
-                style={styles.column}
-                receivingStyle={styles.receiving}
-                onReceiveDragDrop={(event) =>
-                  onReceiveDragDrop(event, col.title as string)
-                }
-                testID={`column-${col.title}`}
-              >
-                <Text style={styles.columnTitle}>{col.title}</Text>
-                {filteredCards
-                  .filter((card) => card.columnTitle === col.title)
-                  .map((card) => (
-                    <DraxView
-                      key={card.id}
-                      style={styles.card}
-                      draggingStyle={styles.dragging}
-                      hoverDraggingStyle={styles.hoverDragging}
-                      dragReleasedStyle={styles.dragging}
-                      dragPayload={card.id}
-                      longPressDelay={150}
-                      receptive={false}
-                      draggable
-                    >
-                      <Text>{card.title}</Text>
-                      {card.description && <Text>{card.description}</Text>}
-                      {card.assignee && <Text>Assignee: {card.assignee}</Text>}
-                      {card.storyPoints && (
-                        <Text>Story Points: {card.storyPoints}</Text>
-                      )}
-                      {card.priority && <Text>Priority: {card.priority}</Text>}
-                    </DraxView>
-                  ))}
-              </DraxView>
-            ))}
+          {columns.map((col) => (
+            <DraxView
+              key={col.title}
+              style={styles.column}
+              receivingStyle={styles.receiving}
+              onReceiveDragDrop={(event) => onReceiveDragDrop(event, col.title)}
+            >
+              <Text style={styles.columnTitle}>{col.title}</Text>
+
+              {filteredCards
+                .filter((card) => card.columnTitle === col.title)
+                .map((card) => (
+                  <DraxView
+                    key={card.id}
+                    style={styles.card}
+                    draggingStyle={styles.dragging}
+                    hoverDraggingStyle={styles.hoverDragging}
+                    dragPayload={card.id}
+                    longPressDelay={150}
+                    draggable
+                  >
+                    <Text>{card.title}</Text>
+                    {card.description && <Text>{card.description}</Text>}
+                    {card.priority && <Text>Priority: {card.priority}</Text>}
+                  </DraxView>
+                ))}
+            </DraxView>
+          ))}
         </View>
       </View>
     </DraxProvider>
@@ -158,7 +145,6 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     padding: 10,
-    overflow: "visible",
   },
   column: {
     flex: 1,
@@ -167,7 +153,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 10,
     minHeight: 500,
-    overflow: "visible",
   },
   receiving: {
     backgroundColor: "#d1c4e9",
@@ -180,7 +165,7 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 10,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
     borderRadius: 5,
     marginBottom: 10,
   },
@@ -194,44 +179,24 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     width: width * 0.25,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
   },
   screen: {
     flex: 1,
     padding: 10,
   },
   filterContainer: {
-    width: "100%",
-    alignItems: "center",
-    paddingVertical: 5,
-    marginBottom: 100,
-    paddingRight: 850,
+    marginBottom: 20,
   },
   pickerWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
     borderWidth: 2,
     borderColor: "#007AFF",
-    overflow: "hidden",
-    height: 34,
+    borderRadius: 8,
     paddingLeft: 8,
   },
-  priorityIcon: {
-    marginRight: 6,
-    backgroundColor: "transparent",
-  },
   picker: {
-    height: 34,
-    width: 145,
-    fontWeight: "bold",
+    width: 150,
     color: "#007AFF",
-    fontSize: 12,
-    backgroundColor: "#f5f5f5",
   },
 });
