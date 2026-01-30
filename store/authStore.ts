@@ -25,6 +25,6 @@ export const useAuth = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-    },
-  ),
+    }
+  )
 );
