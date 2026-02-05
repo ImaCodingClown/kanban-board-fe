@@ -44,3 +44,21 @@ export interface CompaniesResponse {
   companies: Company[];
   message?: string;
 }
+
+export interface CompanyWithUsernamesResponse {
+  success: boolean;
+  company?: CompanyWithUsernames;
+  message?: string;
+}
+
+export interface CompanyWithUsernames {
+  _id?: string;
+  name: string;
+  description?: string;
+  owner_id: string;
+  owner_username: string;
+  members: CompanyMember[];
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
