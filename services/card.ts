@@ -59,6 +59,7 @@ export const editCard = async ({
   title,
   description,
   columnTitle,
+  newColumnTitle,
   storyPoint,
   assignee,
   boardId,
@@ -68,6 +69,7 @@ export const editCard = async ({
   title: string;
   description: string;
   columnTitle: string;
+  newColumnTitle?: string;
   storyPoint: number;
   assignee: string;
   boardId: string;
@@ -78,6 +80,7 @@ export const editCard = async ({
     title,
     description: description.trim() || undefined,
     column_name: columnTitle,
+    new_column_name: newColumnTitle,
     story_point: storyPoint > 0 ? storyPoint : undefined,
     assignee: assignee.trim() || undefined,
     board_id: boardId,
