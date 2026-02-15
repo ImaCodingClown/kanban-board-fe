@@ -456,8 +456,11 @@ export const BoardScreen = () => {
     storyPoint: number,
     assignee: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
+    status?: string,
   ) => {
     if (!editingCard || !board?._id) return;
+
+    const targetColumn = status || editingCard.columnTitle;
 
     try {
       await editCard({
@@ -465,32 +468,41 @@ export const BoardScreen = () => {
         title: title,
         description: description,
         columnTitle: editingCard.columnTitle,
+        newColumnTitle: status,
         storyPoint: storyPoint,
         assignee,
         boardId: board._id,
         priority,
       });
 
-      setColumns((prevColumns) =>
-        prevColumns.map((col) => {
+      setColumns((prevColumns) => {
+        const columnsWithoutCard = prevColumns.map((col) => {
           if (col.title !== editingCard.columnTitle) return col;
+          return {
+            ...col,
+            cards: col.cards.filter((card) => card._id !== editingCard._id),
+          };
+        });
 
-          const updatedCards = col.cards.map((card) =>
-            card._id === editingCard._id
-              ? {
-                  ...card,
-                  title: title,
-                  description: description,
-                  story_point: storyPoint,
-                  assignee: assignee,
-                  priority: priority,
-                }
-              : card,
-          );
+        return columnsWithoutCard.map((col) => {
+          if (col.title !== targetColumn) return col;
 
-          return { ...col, cards: updatedCards };
-        }),
-      );
+          const updatedCard = {
+            ...editingCard,
+            title: title,
+            description: description,
+            story_point: storyPoint,
+            assignee: assignee,
+            priority: priority,
+            columnTitle: targetColumn,
+          };
+
+          return {
+            ...col,
+            cards: [...col.cards, updatedCard],
+          };
+        });
+      });
 
       setEditModalVisible(false);
       setEditingCard(null);
@@ -498,7 +510,6 @@ export const BoardScreen = () => {
       console.error("Failed to update card", error);
     }
   };
-
   return (
     <DraxProvider key={`drax-${draxKey}`}>
       <View style={styles.screen}>

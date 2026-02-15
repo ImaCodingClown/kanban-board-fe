@@ -27,6 +27,7 @@ type Props = {
     storyPoint: number,
     assignee: string,
     priority: "LOW" | "MEDIUM" | "HIGH",
+    status?: string,
   ) => void;
 };
 
@@ -38,6 +39,7 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(
     card.priority ?? "MEDIUM",
   );
+  const [status, setStatus] = useState<string>(card.columnTitle);
   const [teamMembers, setTeamMembers] = useState<TeamMemberWithUsername[]>([]);
 
   const selectedTeam = useAuth((state) => state.selectedTeam);
@@ -83,6 +85,7 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
       setStoryPoint(card.story_point ?? 0);
       setAssignee(card.assignee ?? "");
       setPriority(card.priority ?? "MEDIUM");
+      setStatus(card.columnTitle);
     }
   }, [card]);
 
@@ -94,8 +97,7 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-
-    onSuccess?.(title, description, storyPoint, assignee, priority);
+    onSuccess?.(title, description, storyPoint, assignee, priority, status);
     onClose();
   };
 
@@ -194,6 +196,41 @@ export const EditCardModal = ({ visible, onClose, card, onSuccess }: Props) => {
                       }
                     >
                       {p}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+          <Text style={styles.label}>Status:</Text>
+          <View style={styles.statusContainer}>
+            <View style={styles.statusRow}>
+              {(["To Do", "In Progress", "Done"] as const).map((s) => {
+                const active = status === s;
+                return (
+                  <Pressable
+                    key={s}
+                    onPress={() => setStatus(s)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    style={[
+                      styles.statusButton,
+                      active &&
+                        (s === "To Do"
+                          ? styles.statusToDo
+                          : s === "In Progress"
+                            ? styles.statusInProgress
+                            : styles.statusDone),
+                    ]}
+                  >
+                    <Text
+                      style={
+                        active
+                          ? styles.statusTextActive
+                          : styles.statusTextDefault
+                      }
+                    >
+                      {s}
                     </Text>
                   </Pressable>
                 );
@@ -307,7 +344,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
   },
   cardIdLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: "#666",
     marginRight: 8,
@@ -316,5 +353,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#333",
+  },
+  statusContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    backgroundColor: "#fff",
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginTop: 6,
+    marginBottom: 10,
+  },
+  statusRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    gap: 8,
+  },
+  statusButton: {
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#000000ff",
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  statusToDo: {
+    backgroundColor: "#ef4444",
+    borderColor: "#dc2626",
+  },
+  statusInProgress: {
+    backgroundColor: "#f59e0b",
+    borderColor: "#d97706",
+  },
+  statusDone: {
+    backgroundColor: "#22c55e",
+    borderColor: "#16a34a",
+  },
+  statusTextDefault: {
+    color: "#111827",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  statusTextActive: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
   },
 });
