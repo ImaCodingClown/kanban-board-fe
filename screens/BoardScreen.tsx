@@ -20,6 +20,7 @@ import { UserFilterDropdown } from "@/components/UserFilterDropdown";
 import { useToast } from "@/hooks/useToast";
 import { isForbiddenError } from "@/services/api";
 import { usePermission } from "@/hooks/usePermission";
+import { KPIButtons } from "../components/KPIButtons";
 
 const { width } = Dimensions.get("window");
 
@@ -484,7 +485,7 @@ export const BoardScreen = () => {
           };
         });
 
-        return columnsWithoutCard.map((col) => {
+        const updatedColumns = columnsWithoutCard.map((col) => {
           if (col.title !== targetColumn) return col;
 
           const updatedCard = {
@@ -502,6 +503,8 @@ export const BoardScreen = () => {
             cards: [...col.cards, updatedCard],
           };
         });
+
+        return updatedColumns;
       });
 
       setEditModalVisible(false);
@@ -513,15 +516,25 @@ export const BoardScreen = () => {
   return (
     <DraxProvider key={`drax-${draxKey}`}>
       <View style={styles.screen}>
-        <UserFilterDropdown
-          availableUsers={availableUsers}
-          selectedUsers={selectedUserFilters}
-          onToggleUser={handleToggleUser}
-          onClearFilter={handleClearFilter}
-          isOpen={filterDropdownOpen}
-          onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
-          hasUnassignedCards={hasUnassignedCards}
-        />
+        <View style={styles.filtersRow}>
+          <UserFilterDropdown
+            availableUsers={availableUsers}
+            selectedUsers={selectedUserFilters}
+            onToggleUser={handleToggleUser}
+            onClearFilter={handleClearFilter}
+            isOpen={filterDropdownOpen}
+            onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
+            hasUnassignedCards={hasUnassignedCards}
+          />
+        </View>
+
+        <View style={styles.kpiRow}>
+          <KPIButtons
+            columns={filteredColumns}
+            selectedUsers={selectedUserFilters}
+          />
+        </View>
+
         <AddCardModal
           visible={showModal}
           onClose={() => setShowModal(false)}
@@ -611,7 +624,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 0,
   },
   header: {
     paddingVertical: 10,
@@ -658,10 +671,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  filtersRow: {
+    position: "absolute",
+    left: 10,
+    top: 10,
+    zIndex: 1000,
+  },
+  kpiRow: {
+    position: "absolute",
+    left: 210,
+    top: 16,
+    zIndex: 999,
+  },
   board: {
     flex: 1,
     flexDirection: "row",
     overflow: "visible",
+    marginTop: 40,
   },
   column: {
     flex: 1,
