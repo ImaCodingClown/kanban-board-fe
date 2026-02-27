@@ -13,10 +13,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/store/authStore";
 import { companyService } from "@/services/company";
-import { Company, CompanyMember, CompanyRole } from "@/models/company";
+import {
+  Company,
+  CompanyMember,
+  CompanyRole,
+  CompanyWithUsernames,
+} from "@/models/company";
 import { Toast } from "@/components/Toast";
 import { formatErrorMessage } from "@/services/api";
 import { UI_CONSTANTS } from "@/constants/ui";
+import { FindCompanyMembersModal } from "@/components/FindCompanyMembersModal";
 
 export const CompanyDetailScreen = () => {
   const router = useRouter();
@@ -32,6 +38,8 @@ export const CompanyDetailScreen = () => {
   const [editingName, setEditingName] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [findMembersModalVisible, setFindMembersModalVisible] = useState(false);
+  const [removingMember, setRemovingMember] = useState<string | null>(null);
 
   // Toast state
   const [toast, setToast] = useState({
@@ -73,46 +81,27 @@ export const CompanyDetailScreen = () => {
     }
 
     try {
-      // placeholder for now with mock data
-      // This will be replaced with actual API call when backend is ready
-      const isTony = user.username.toLowerCase() === "tony";
-      const mockCompany: Company = {
-        _id: id,
-        name: id === "default" ? "LJY Software" : id,
-        description:
-          "A software development company focused on building innovative solutions.",
-        owner_id: isTony ? user.id : "owner-id",
-        owner_username: isTony ? "tony" : "owner",
-        members: [
-          {
-            user_id: user.id,
-            username: user.username,
-            email: user.email,
-            role: isTony ? CompanyRole.Owner : CompanyRole.Member,
-            joined_at: new Date().toISOString(),
-          },
-          {
-            user_id: "user-2",
-            username: "john",
-            email: "john@example.com",
-            role: CompanyRole.Member,
-            joined_at: new Date().toISOString(),
-          },
-          {
-            user_id: "user-3",
-            username: "jane",
-            email: "jane@example.com",
-            role: CompanyRole.Member,
-            joined_at: new Date().toISOString(),
-          },
-        ],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_active: true,
-      };
-      setCompany(mockCompany);
-      setEditingName(mockCompany.name);
-      setEditingDescription(mockCompany.description || "");
+      // Get company with usernames for full details
+      const response = await companyService.getCompanyWithUsernames(id);
+      if (response.success && response.company) {
+        const companyData = response.company;
+        const company: Company = {
+          _id: companyData._id,
+          name: companyData.name,
+          description: companyData.description,
+          owner_id: companyData.owner_id,
+          owner_username: companyData.owner_username,
+          members: companyData.members,
+          created_at: companyData.created_at,
+          updated_at: companyData.updated_at,
+          is_active: companyData.is_active,
+        };
+        setCompany(company);
+        setEditingName(company.name);
+        setEditingDescription(company.description || "");
+      } else {
+        showToast("Company not found", "error");
+      }
     } catch (error: any) {
       if (error.response?.status === 401) {
         logout();
@@ -155,6 +144,40 @@ export const CompanyDetailScreen = () => {
     setIsEditing(false);
   };
 
+  const handleMemberAdded = (updatedCompany: Company) => {
+    setCompany(updatedCompany);
+    // Reload company with usernames to get full member details
+    loadCompany();
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!company || !company._id) return;
+
+    setRemovingMember(memberId);
+    try {
+      const response = await companyService.removeMember(company._id, memberId);
+
+      if (response.success && response.company) {
+        // Reload company with usernames to get updated member list
+        await loadCompany();
+        showToast("Member removed successfully!", "success");
+      } else {
+        showToast(response.message || "Failed to remove member", "error");
+      }
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        logout();
+        router.replace("/login");
+        return;
+      }
+
+      const errorMessage = formatErrorMessage(error);
+      showToast(errorMessage, "error");
+    } finally {
+      setRemovingMember(null);
+    }
+  };
+
   const handleSave = async () => {
     if (!company) return;
 
@@ -165,16 +188,30 @@ export const CompanyDetailScreen = () => {
 
     setSaving(true);
     try {
-      // This will be replaced with actual API call when backend is ready
-      const updatedCompany: Company = {
-        ...company,
+      if (!company._id) {
+        showToast("Invalid company ID", "error");
+        setSaving(false);
+        return;
+      }
+
+      const response = await companyService.updateCompany(company._id, {
         name: editingName.trim(),
         description: editingDescription.trim() || undefined,
-        updated_at: new Date().toISOString(),
-      };
-      setCompany(updatedCompany);
-      setIsEditing(false);
-      showToast("Company updated successfully!", "success");
+      });
+
+      if (response.success && response.company) {
+        const updatedCompany: Company = {
+          ...company,
+          name: response.company.name,
+          description: response.company.description,
+          updated_at: response.company.updated_at,
+        };
+        setCompany(updatedCompany);
+        setIsEditing(false);
+        showToast("Company updated successfully!", "success");
+      } else {
+        showToast(response.message || "Failed to update company", "error");
+      }
     } catch (error: any) {
       if (error.response?.status === 401) {
         logout();
@@ -189,38 +226,60 @@ export const CompanyDetailScreen = () => {
     }
   };
 
-  const renderMember = ({ item }: { item: CompanyMember }) => (
-    <View style={styles.memberCard}>
-      <View style={styles.memberInfo}>
-        <View style={styles.memberAvatar}>
-          <Text style={styles.memberAvatarText}>
-            {item.username.charAt(0).toUpperCase()}
-          </Text>
+  const renderMember = ({ item }: { item: CompanyMember }) => {
+    const canRemove =
+      isOwner() &&
+      item.role !== CompanyRole.Owner &&
+      removingMember !== item.user_id;
+
+    return (
+      <View style={styles.memberCard}>
+        <View style={styles.memberInfo}>
+          <View style={styles.memberAvatar}>
+            <Text style={styles.memberAvatarText}>
+              {item.username.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.memberDetails}>
+            <Text style={styles.memberName}>{item.username}</Text>
+            <Text style={styles.memberEmail}>{item.email}</Text>
+          </View>
         </View>
-        <View style={styles.memberDetails}>
-          <Text style={styles.memberName}>{item.username}</Text>
-          <Text style={styles.memberEmail}>{item.email}</Text>
+        <View style={styles.memberActions}>
+          <View style={styles.memberRole}>
+            <View
+              style={[
+                styles.roleBadge,
+                item.role === CompanyRole.Owner && styles.ownerBadge,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.roleText,
+                  item.role === CompanyRole.Owner && styles.ownerText,
+                ]}
+              >
+                {item.role}
+              </Text>
+            </View>
+          </View>
+          {canRemove && (
+            <TouchableOpacity
+              style={styles.removeButton}
+              onPress={() => handleRemoveMember(item.user_id)}
+              disabled={removingMember === item.user_id}
+            >
+              {removingMember === item.user_id ? (
+                <ActivityIndicator size="small" color="#FF3B30" />
+              ) : (
+                <Ionicons name="close-circle" size={24} color="#FF3B30" />
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-      <View style={styles.memberRole}>
-        <View
-          style={[
-            styles.roleBadge,
-            item.role === CompanyRole.Owner && styles.ownerBadge,
-          ]}
-        >
-          <Text
-            style={[
-              styles.roleText,
-              item.role === CompanyRole.Owner && styles.ownerText,
-            ]}
-          >
-            {item.role}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -350,9 +409,20 @@ export const CompanyDetailScreen = () => {
         </View>
 
         <View style={styles.membersSection}>
-          <Text style={styles.sectionTitle}>
-            Members ({company.members.length})
-          </Text>
+          <View style={styles.membersSectionHeader}>
+            <Text style={styles.sectionTitle}>
+              Members ({company.members.length})
+            </Text>
+            {isOwner() && (
+              <TouchableOpacity
+                style={styles.addMemberButton}
+                onPress={() => setFindMembersModalVisible(true)}
+              >
+                <Ionicons name="person-add" size={20} color="#1976D2" />
+                <Text style={styles.addMemberButtonText}>Add Member</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <FlatList
             data={company.members}
             renderItem={renderMember}
@@ -361,6 +431,13 @@ export const CompanyDetailScreen = () => {
           />
         </View>
       </ScrollView>
+
+      <FindCompanyMembersModal
+        visible={findMembersModalVisible}
+        company={company}
+        onClose={() => setFindMembersModalVisible(false)}
+        onMemberAdded={handleMemberAdded}
+      />
     </View>
   );
 };
@@ -488,11 +565,30 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
   },
+  membersSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: "#000",
-    marginBottom: 16,
+  },
+  addMemberButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "#E3F2FD",
+    borderRadius: 8,
+  },
+  addMemberButtonText: {
+    color: "#1976D2",
+    fontSize: 14,
+    fontWeight: "600",
   },
   memberCard: {
     flexDirection: "row",
@@ -501,6 +597,14 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#F2F2F7",
+  },
+  memberActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  removeButton: {
+    padding: 4,
   },
   memberInfo: {
     flexDirection: "row",
