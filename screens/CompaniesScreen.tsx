@@ -26,7 +26,6 @@ export const CompaniesScreen = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Toast state
   const [toast, setToast] = useState({
     visible: false,
     message: "",
@@ -64,62 +63,67 @@ export const CompaniesScreen = () => {
     }
 
     try {
-      // placeholder with mock data
-      // This will be replaced with actual API call when backend is ready
-      const userGroups = (user as any).group || [];
+      const response = await companyService.getUserCompanies();
 
-      if (userGroups.length === 0) {
-        // placeholder with mock data
-        const isTony = user.username.toLowerCase() === "tony";
-        const mockCompanies: Company[] = [
-          {
-            _id: "default",
-            name: isTony ? "LJY Software" : "My Company",
-            description: isTony
-              ? "A software development company focused on building innovative solutions."
-              : "Default company",
-            owner_id: isTony ? user.id : user.id,
-            owner_username: isTony ? "tony" : user.username,
-            members: [
-              {
-                user_id: user.id,
-                username: user.username,
-                email: user.email,
-                role: isTony ? CompanyRole.Owner : CompanyRole.Member,
-                joined_at: new Date().toISOString(),
-              },
-            ],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            is_active: true,
-          },
-        ];
-        setCompanies(mockCompanies);
+      if (response.success) {
+        const companies: Company[] = response.companies.map((c: any) => {
+          let companyId: string | undefined;
+          if (c._id) {
+            if (typeof c._id === "object" && c._id.$oid) {
+              companyId = c._id.$oid;
+            } else if (typeof c._id === "string") {
+              companyId = c._id;
+            }
+          } else if (c.id) {
+            if (typeof c.id === "object" && c.id.$oid) {
+              companyId = c.id.$oid;
+            } else if (typeof c.id === "string") {
+              companyId = c.id;
+            }
+          }
+
+          let ownerId: string | undefined;
+          if (c.leader_id) {
+            if (typeof c.leader_id === "object" && c.leader_id.$oid) {
+              ownerId = c.leader_id.$oid;
+            } else if (typeof c.leader_id === "string") {
+              ownerId = c.leader_id;
+            }
+          } else if (c.owner_id) {
+            if (typeof c.owner_id === "object" && c.owner_id.$oid) {
+              ownerId = c.owner_id.$oid;
+            } else if (typeof c.owner_id === "string") {
+              ownerId = c.owner_id;
+            }
+          }
+
+          return {
+            _id: companyId,
+            name: c.name,
+            description: c.description,
+            owner_id: ownerId || "",
+            owner_username: "",
+            members: (c.members || []).map((m: any) => ({
+              user_id:
+                typeof m.user_id === "object" && m.user_id.$oid
+                  ? m.user_id.$oid
+                  : m.user_id,
+              username: "",
+              email: "",
+              role:
+                m.role === "Owner" || m.role === 0
+                  ? CompanyRole.Owner
+                  : CompanyRole.Member,
+              joined_at: m.joined_at || new Date().toISOString(),
+            })),
+            created_at: c.created_at || new Date().toISOString(),
+            updated_at: c.updated_at || new Date().toISOString(),
+            is_active: c.is_active !== undefined ? c.is_active : true,
+          };
+        });
+        setCompanies(companies);
       } else {
-        // Map groups to companies
-        const isTony = user.username.toLowerCase() === "tony";
-        const mockCompanies: Company[] = userGroups.map(
-          (group: string, index: number) => ({
-            _id: `company-${index}`,
-            name: group,
-            description: `Company: ${group}`,
-            owner_id: isTony ? user.id : "owner-id",
-            owner_username: isTony ? "tony" : "owner",
-            members: [
-              {
-                user_id: user.id,
-                username: user.username,
-                email: user.email,
-                role: isTony ? "Owner" : "Member",
-                joined_at: new Date().toISOString(),
-              },
-            ],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            is_active: true,
-          }),
-        );
-        setCompanies(mockCompanies);
+        setCompanies([]);
       }
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -162,8 +166,12 @@ export const CompaniesScreen = () => {
   }, [accessToken, user, checkTokenExpiry, logout, router, loadCompanies]);
 
   const handleCompanySelect = (company: Company) => {
-    const companyId = company._id || company.name;
-    router.push(`/company/${companyId}` as any);
+    if (!company._id) {
+      console.error("Company has no ID:", company);
+      showToast("Cannot open company: missing ID", "error");
+      return;
+    }
+    router.push(`/company/${company._id}` as any);
   };
 
   const renderCompanyCard = ({ item }: { item: Company }) => (
@@ -246,13 +254,7 @@ export const CompaniesScreen = () => {
         <FlatList
           data={companies}
           renderItem={renderCompanyCard}
-          keyExtractor={(item) => {
-            const raw = (item as any)._id;
-            if (raw && typeof raw === "object" && "$oid" in raw) {
-              return (raw as any).$oid as string;
-            }
-            return String(item._id || item.name);
-          }}
+          keyExtractor={(item) => String(item._id || item.name)}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />

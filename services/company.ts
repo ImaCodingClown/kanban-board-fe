@@ -4,6 +4,7 @@ import {
   UpdateCompanyPayload,
   CompanyResponse,
   CompaniesResponse,
+  CompanyWithUsernamesResponse,
 } from "@/models/company";
 
 export const companyService = {
@@ -17,6 +18,15 @@ export const companyService = {
   async getCompany(companyId: string): Promise<CompanyResponse> {
     const response = await api.get<CompanyResponse>(
       apiPath(`/companies/${companyId}`),
+    );
+    return response.data;
+  },
+
+  async getCompanyWithUsernames(
+    companyId: string,
+  ): Promise<CompanyWithUsernamesResponse> {
+    const response = await api.get<CompanyWithUsernamesResponse>(
+      apiPath(`/companies/${companyId}/with-usernames`),
     );
     return response.data;
   },
@@ -43,6 +53,25 @@ export const companyService = {
   async deleteCompany(companyId: string): Promise<{ success: boolean }> {
     const response = await api.delete<{ success: boolean }>(
       apiPath(`/companies/${companyId}`),
+    );
+    return response.data;
+  },
+
+  async addMember(companyId: string, userId: string): Promise<CompanyResponse> {
+    const response = await api.post<CompanyResponse>(
+      apiPath(`/companies/${companyId}/members`),
+      { user_id: userId },
+    );
+    return response.data;
+  },
+
+  async removeMember(
+    companyId: string,
+    userId: string,
+  ): Promise<CompanyResponse> {
+    const response = await api.delete<CompanyResponse>(
+      apiPath(`/companies/${companyId}/members`),
+      { data: { user_id: userId } },
     );
     return response.data;
   },
