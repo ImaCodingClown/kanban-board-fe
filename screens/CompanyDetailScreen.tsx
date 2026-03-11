@@ -58,9 +58,15 @@ export const CompanyDetailScreen = () => {
 
   const isOwner = () => {
     if (!company || !user) return false;
-    return (
-      company.owner_id === user.id || user.username.toLowerCase() === "tony"
-    );
+
+    let userId: string;
+    if (typeof user.id === "object" && user.id !== null && "$oid" in user.id) {
+      userId = (user.id as any).$oid;
+    } else {
+      userId = user.id as string;
+    }
+
+    return company.owner_id === userId;
   };
 
   const loadCompany = useCallback(async () => {
