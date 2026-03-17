@@ -13,7 +13,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/store/authStore";
 import { companyService } from "@/services/company";
-import { Company, CompanyMember, CompanyRole } from "@/models/company";
+import {
+  CompanyWithUsernames,
+  CompanyMember,
+  CompanyRole,
+} from "@/models/company";
+import { FindCompanyMembersModal } from "@/components/FindCompanyMembersModal";
 import { Toast } from "@/components/Toast";
 import { formatErrorMessage } from "@/services/api";
 import { UI_CONSTANTS } from "@/constants/ui";
@@ -26,14 +31,14 @@ export const CompanyDetailScreen = () => {
   const checkTokenExpiry = useAuth((state) => state.checkTokenExpiry);
   const logout = useAuth((state) => state.logout);
 
-  const [company, setCompany] = useState<Company | null>(null);
+  const [company, setCompany] = useState<CompanyWithUsernames | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editingName, setEditingName] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showFindModal, setShowFindModal] = useState(false);
 
-  // Toast state
   const [toast, setToast] = useState({
     visible: false,
     message: "",
@@ -42,11 +47,7 @@ export const CompanyDetailScreen = () => {
 
   const showToast = useCallback(
     (message: string, type: "success" | "error" | "warning" | "info") => {
-      setToast({
-        visible: true,
-        message,
-        type,
-      });
+      setToast({ visible: true, message, type });
     },
     [],
   );
@@ -57,13 +58,15 @@ export const CompanyDetailScreen = () => {
 
   const isOwner = () => {
     if (!company || !user) return false;
-    const userUsername = user.username.toLowerCase();
-    const ownerUsername = company.owner_username.toLowerCase();
-    return (
-      ownerUsername === "tony" ||
-      ownerUsername === userUsername ||
-      company.owner_id === user.id
-    );
+
+    let userId: string;
+    if (typeof user.id === "object" && user.id !== null && "$oid" in user.id) {
+      userId = (user.id as any).$oid;
+    } else {
+      userId = user.id as string;
+    }
+
+    return company.owner_id === userId;
   };
 
   const loadCompany = useCallback(async () => {
@@ -73,46 +76,15 @@ export const CompanyDetailScreen = () => {
     }
 
     try {
-      // placeholder for now with mock data
-      // This will be replaced with actual API call when backend is ready
-      const isTony = user.username.toLowerCase() === "tony";
-      const mockCompany: Company = {
-        _id: id,
-        name: id === "default" ? "LJY Software" : id,
-        description:
-          "A software development company focused on building innovative solutions.",
-        owner_id: isTony ? user.id : "owner-id",
-        owner_username: isTony ? "tony" : "owner",
-        members: [
-          {
-            user_id: user.id,
-            username: user.username,
-            email: user.email,
-            role: isTony ? CompanyRole.Owner : CompanyRole.Member,
-            joined_at: new Date().toISOString(),
-          },
-          {
-            user_id: "user-2",
-            username: "john",
-            email: "john@example.com",
-            role: CompanyRole.Member,
-            joined_at: new Date().toISOString(),
-          },
-          {
-            user_id: "user-3",
-            username: "jane",
-            email: "jane@example.com",
-            role: CompanyRole.Member,
-            joined_at: new Date().toISOString(),
-          },
-        ],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_active: true,
-      };
-      setCompany(mockCompany);
-      setEditingName(mockCompany.name);
-      setEditingDescription(mockCompany.description || "");
+      const response = await companyService.getCompanyWithUsernames(id);
+
+      if (response.success && response.company) {
+        setCompany(response.company);
+        setEditingName(response.company.name);
+        setEditingDescription(response.company.description || "");
+      } else {
+        showToast(response.message || "Company not found", "error");
+      }
     } catch (error: any) {
       if (error.response?.status === 401) {
         logout();
@@ -156,7 +128,7 @@ export const CompanyDetailScreen = () => {
   };
 
   const handleSave = async () => {
-    if (!company) return;
+    if (!company || !company._id) return;
 
     if (!editingName.trim()) {
       showToast("Company name cannot be empty", "warning");
@@ -165,16 +137,16 @@ export const CompanyDetailScreen = () => {
 
     setSaving(true);
     try {
-      // This will be replaced with actual API call when backend is ready
-      const updatedCompany: Company = {
-        ...company,
+      const response = await companyService.updateCompany(company._id, {
         name: editingName.trim(),
         description: editingDescription.trim() || undefined,
-        updated_at: new Date().toISOString(),
-      };
-      setCompany(updatedCompany);
-      setIsEditing(false);
-      showToast("Company updated successfully!", "success");
+      });
+
+      if (response.success) {
+        await loadCompany();
+        setIsEditing(false);
+        showToast("Company updated successfully!", "success");
+      }
     } catch (error: any) {
       if (error.response?.status === 401) {
         logout();
@@ -270,6 +242,30 @@ export const CompanyDetailScreen = () => {
         onClose={hideToast}
       />
 
+      <FindCompanyMembersModal
+        visible={showFindModal}
+        company={
+          company
+            ? {
+                _id: company._id,
+                name: company.name,
+                description: company.description,
+                owner_id: company.owner_id,
+                owner_username: company.owner_username,
+                members: company.members,
+                created_at: company.created_at,
+                updated_at: company.updated_at,
+                is_active: company.is_active,
+              }
+            : null
+        }
+        onClose={() => setShowFindModal(false)}
+        onMemberAdded={async () => {
+          await loadCompany();
+          showToast("Member added successfully!", "success");
+        }}
+      />
+
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -350,9 +346,20 @@ export const CompanyDetailScreen = () => {
         </View>
 
         <View style={styles.membersSection}>
-          <Text style={styles.sectionTitle}>
-            Members ({company.members.length})
-          </Text>
+          <View style={styles.membersSectionHeader}>
+            <Text style={styles.sectionTitle}>
+              Members ({company.members.length})
+            </Text>
+            {isOwner() && (
+              <TouchableOpacity
+                style={styles.findMembersButton}
+                onPress={() => setShowFindModal(true)}
+              >
+                <Ionicons name="search" size={20} color="#007AFF" />
+                <Text style={styles.findMembersText}>Find Members</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <FlatList
             data={company.members}
             renderItem={renderMember}
@@ -488,11 +495,32 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
   },
+  membersSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
     color: "#000",
-    marginBottom: 16,
+  },
+  findMembersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#F0F8FF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#007AFF",
+  },
+  findMembersText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#007AFF",
   },
   memberCard: {
     flexDirection: "row",
