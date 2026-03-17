@@ -4,14 +4,16 @@ import { useAuth } from "@/store/authStore";
 
 export default function Index() {
   const router = useRouter();
-  const token = useAuth((state) => state.token);
+  const accessToken = useAuth((state) => state.accessToken);
+  const user = useAuth((state) => state.user);
+  const checkTokenExpiry = useAuth((state) => state.checkTokenExpiry);
+  const logout = useAuth((state) => state.logout);
   const [isReady, setIsReady] = useState(false);
 
-  // Defer routing to allow _layout.tsx to mount first
   useEffect(() => {
     const timeout = setTimeout(() => {
       setIsReady(true);
-    }, 0); // wait until next render cycle
+    }, 100);
 
     return () => clearTimeout(timeout);
   }, []);
@@ -19,12 +21,18 @@ export default function Index() {
   useEffect(() => {
     if (!isReady) return;
 
-    if (token) {
-      router.replace("/signup");
+    if (accessToken && user) {
+      const isTokenValid = checkTokenExpiry();
+      if (isTokenValid) {
+        router.replace("/apps");
+      } else {
+        logout();
+        router.replace("/login");
+      }
     } else {
       router.replace("/login");
     }
-  }, [isReady, token]);
+  }, [isReady, accessToken, user, router, checkTokenExpiry, logout]);
 
   return null;
 }
